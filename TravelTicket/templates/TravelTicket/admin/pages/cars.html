@@ -1,0 +1,229 @@
+ {% extends 'TravelTicket/admin/base.html' %}
+
+    {% block css %}
+    <style>
+
+
+        #CarForm {
+            display: none;
+        }
+
+        #CarForm.show {
+            display: block;
+        }
+
+        .form-container {
+            display: none;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .form-container.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .city-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .city-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            height: 70px;
+            /* box-shadow: 0 2px 10px rgba(0,0,0,0.1); */
+        }
+    </style>
+    {% endblock css %}
+{% block content %}
+
+    <div class="  main-content mt-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-city me-2"></i>Gestion des Cars</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <button id="showFormBtn" class="btn btn-outline-warning mb-2">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter un Car
+                </button>
+                
+                <!-- Formulaire (caché par défaut) -->
+               <div id="carForm" class="form-container position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-3 text-warning mb-2">
+                        <h6 class="mb-0">
+                            <i class="bi bi-bus-front me-2"></i>Nouvel Car
+                        </h6>
+                        <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                            <i class="fas fa-times fs-4 text-warning"></i>
+                        </button>
+                    </div>
+                   <form method="post" id="addCarForm" action="{% if id_edit %}{% url 'car_edit' id_edit %}{% else %}{% url 'car' %}{% endif %}">
+                    {% csrf_token %}
+                    <input type="text" name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
+                        <div class="row">
+                            <div class="mb-4 col-md-6">
+                                {{ form.typecar.label_tag }} {{ form.typecar }}
+                            </div>
+                            <div class="mb-4 col-md-6">
+                                {{ form.immatriculation.label_tag }} {{ form.immatriculation }}
+                            </div>
+                            
+                        </div>
+
+                        <div class="row">
+                            <div class="mb-4 col-md-4">
+                                {{ form.model.label_tag }} {{ form.model }}
+                            </div>
+                            <div class="mb-4 col-md-4">
+                                {{ form.capacite.label_tag }} {{ form.capacite }}
+                            </div>
+                            <div class="mb-4 col-md-4">
+                                {{ form.couleur.label_tag }} {{ form.couleur }}
+                            </div>
+                          
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if id_edit %}
+                                    Modifier Car
+                                {% else %}
+                                Ajouter Car
+                                {% endif %}
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Filtre et Affichage -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0 fs-6"><i class="fas fa-filter me-1"></i>Model/Immatriculation</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>##</th>
+                                <th>Immatriculation</th>
+                                <th>Model</th>
+                                <th>Capacité</th>
+                                <th>Conducteur</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            {%if cars %}
+                                {% for car in cars %}
+                                <tr class="city-card">
+                                    <td>{{ car.id }}</td>
+                                    <td>{{ car.immatriculation }}</td>
+                                    <td>{{ car.model }}</td>
+                                    <td>{{ car.capacite }}</td>
+                                    <td>
+                                        {% if car.conducteur_set.all %}
+                                            {% for conducteur in car.conducteur_set.all %}
+                                            <ul class="list-unstyled mb-0">
+                                                <li>{{ conducteur }}</li>
+                                            </ul>
+                                            {% endfor %}
+                                            
+                                        {% else %}
+                                        <button type="button" class="btn btn-warning btn-sm rounded-4" disabled>Aucun</button>
+
+                                            
+                                        {% endif %}
+                                    </td>
+                                    
+                                     <td>
+                                            <a href="{% url 'car_edit' car.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ car.id }}" 
+                                                data-nom="{{ car.immatriculation }}"
+                                                >
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'car_delete' car.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer ce conducteur ?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            
+                                        </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Aucun conducteur enregistrer</td>
+                                </tr>
+                            {% endif %}
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block scripts %}
+    
+    <script>
+        $(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtn').click(function() {
+                $('#carForm').toggleClass('show');
+                $(this).toggleClass('btn-outline-warning');
+                // $(this).html($(this).hasClass('btn btn-primary') ? 
+                //     '<i class="fas fa-plus-circle me-2"></i>Ajouter un Car' : 
+                //     '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#carForm').removeClass('show');
+                // $('#showFormBtn').removeClass('btn-outline-waring').addClass('btn-outline-warning')
+                //     .html('<i class="fas fa-plus-circle me-2"></i>Ajouter un Car');
+                $('#addCarForm')[0].reset();
+            });
+            
+            
+          
+        });
+    </script>
+
+     </script>
+
+        {% if id_edit %}
+            <script>
+                $(document).ready(function() {
+                    $('#carForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+{% endblock scripts %}

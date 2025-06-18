@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Transport - FlixBus Style</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        root {
+            --primary-color: #003580;
+            --secondary-color: #0071c2;
+            --sidebar-width: 240px;
+            --top-nav-height: 60px;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+            padding-top: var(--top-nav-height);
+        }
+        
+        /* Top Navbar - Fixed at the top */
+        .top-navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 0 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--top-nav-height);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Sidebar Styles - Below top navbar */
+        .sidebar {
+            width: var(--sidebar-width);
+            /* height: calc(50vh - var(--top-nav-height)); */
+            /* height: 50%; */
+            position: fixed;
+            left: 0;
+            /* top: var(--top-nav-height); */
+            top: 53px; 
+            bottom: 50px; 
+            background-color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .scroll{
+            margin-top: 30px;
+        }
+        
+.sidebar.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+        
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+        .sidebar-header {
+            padding: 15px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .sidebar-header img {
+            height: 30px;
+            margin-right: 10px;
+        }
+        
+        .sidebar-menu {
+            padding: 10px 0;
+           
+        }
+        
+        .sidebar-menu .nav-item {
+            margin: 2px 0;
+        }
+        
+        .sidebar-menu .nav-link {
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .sidebar-menu .nav-link:hover {
+            background-color: #f0f0f0;
+            color: var(--primary-color);
+        }
+        
+        .sidebar-menu .nav-link.active {
+            background-color: #cabe38;
+            color: white;
+            border-radius: 15px;
+
+        }
+        
+        .sidebar-menu .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: margin-left 0.3s;
+            min-height: calc(100vh - var(--top-nav-height));
+        }
+        
+        /* Menu Toggle Button */
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-right: 15px;
+        }
+        
+        .search-bar {
+            width: 300px;
+        }
+        
+        .user-menu img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        /* Dashboard Cards */
+        .dashboard-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+            opacity: 0.7;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .search-bar {
+                width: 200px;
+            }
+        }
+     
+
+
+        
+       
+/* Responsive Design */
+
+
+
+        /* .sidebar.h-100 {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+} */
+
+
+/* css ville */
+
+    .form-container {
+            display: none;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .form-container.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .city-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .city-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            height: 70px;
+            /* box-shadow: 0 2px 10px rgba(0,0,0,0.1); */
+        }
+
+
+
+
+    </style>
+</head>
+<body>
+    <!-- Top Navbar - Fixed at the top -->
+    <nav class="top-navbar">
+        <div class="d-flex align-items-center">
+            <button class="menu-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="sidebar-header d-none d-lg-flex">
+                <img src="https://via.placeholder.com/30x30" alt="Logo">
+                <h5 class="mb-0 ms-2">Admin Transport</h5>
+            </div>
+        </div>
+        
+        <div class="search-bar">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Rechercher...">
+                <button class="btn btn-primary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="user-menu d-flex align-items-center">
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
+                    <img src="https://via.placeholder.com/40x40" alt="User">
+                    <span class="ms-2 d-none d-sm-inline">Admin</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Sidebar - Below top navbar -->
+
+<div class="container scroll">
+    <div class="sidebar h-100">
+        <div class="sidebar-header d-lg-none">
+            <img src="https://via.placeholder.com/30x30" alt="Logo">
+            <h5 class="mb-0 ms-2">Admin Transport</h5>
+        </div>
+        
+        <ul class="nav flex-column sidebar-menu  ">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Tableau de bord
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-bus"></i>
+                    Gestion des bus
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-route"></i>
+                    Itinéraires
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-calendar-alt"></i>
+                    Planning
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-ticket-alt"></i>
+                    Réservations
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-users"></i>
+                    Clients
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-line"></i>
+                    Statistiques
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-cog"></i>
+                    Paramètres
+                </a>
+            </li>
+
+
+
+            
+
+
+        </ul>
+    </div>
+</div>
+    
+    <!-- Main Content -->
+    <div class=" main-content">
+        <div class="container-fluid">
+            <!-- Contenu principal ici -->
+                 <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-city me-2"></i>Gestion des Villes</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <button id="showFormBtn" class="btn btn-primary mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter une ville
+                </button>
+                
+                <!-- Formulaire (caché par défaut) -->
+               <div id="cityForm" class="form-container position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>Nouvelle Ville
+                        </h6>
+                        <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                            <i class="fas fa-times fs-4 text-secondary"></i>
+                        </button>
+                    </div>
+                    <form id="addCityForm">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="cityName" class="form-label">Nom de la ville</label>
+                                <input type="text" class="form-control" id="cityName" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="region" class="form-label">Region</label>
+                                <input type="text" class="form-control" id="region" required>
+                            </div>
+                            <div class="col-md-4 d-flex justify-content-center  align-items-center"> 
+                                <!-- <div class="form-check form-switch ">
+                                    <input class="form-check-input" type="checkbox" id="gare" name="gare">
+                                    <label class="form-check-label" for="estGare">Gare</label>
+                                </div> -->
+                                <div class="d-flex justify-content-end" style="position: relative; left: 100px;">
+                                    
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-save me-2"></i>Enregistrer
+                                    </button>
+                                 </div>
+                            </div>
+
+                        </div>
+                        
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Filtre et Affichage -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0"><i class="fas fa-filter me-1"></i>Par villes</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Région</th>
+                                <th>Commune</th>
+                                <th>Gare</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            <tr class="city-card">
+                                <td>Abidjan</td>
+                                <td>Abobo</td>
+                                <td>Oui</td>
+                                <td>paris</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-5">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr class="city-card">
+                                <td>Abidjan</td>
+                                <td>Abobo</td>
+                                <td>Oui</td>
+                                <td>paris</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-5">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            
+
+
+                            <!-- Les villes seront ajoutées ici dynamiquement -->
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Aucune ville enregistrée</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script>
+
+
+$(document).ready(function() {
+    // Initialisation
+    initSidebar();
+
+    // Clic sur l'icône menu
+    $('#sidebarToggle').click(function(e) {
+        e.stopPropagation();
+        toggleSidebar();
+        $('.sidebar').toggleClass('hidden');
+    });
+
+    // Clic sur un élément du menu (optionnel)
+    $('.sidebar-menu .nav-link').click(function() {
+        $('.sidebar-menu .nav-link').removeClass('active');
+        $(this).addClass('active');
+        
+        // Sur mobile, cache le menu après sélection
+        if ($(window).width() < 992) {
+            toggleSidebar();
+        }
+    });
+
+    // Gestion du redimensionnement
+    $(window).resize(function() {
+        initSidebar();
+    });
+
+    // Basculer l'état du sidebar
+    function toggleSidebar() {
+        $('.sidebar').toggleClass('active');
+        updateLayout();
+    }
+
+    // Mise à jour du layout
+    function updateLayout() {
+        const isActive = $('.sidebar').hasClass('active');
+        
+        // Ajustement du contenu principal
+        $('.main-content').css('margin-left', isActive ? '240px' : '0');
+        
+        // Changement de l'icône
+        $('#sidebarToggle i').toggleClass('fa-bars fa-times');
+    }
+
+    // Initialisation du sidebar
+    function initSidebar() {
+        if ($(window).width() >= 992) {
+            // Desktop: menu visible par défaut
+            $('.sidebar').addClass('active');
+            $('.main-content').css('margin-left', '240px');
+        } else {
+            // Mobile: menu caché par défaut
+            $('.sidebar').removeClass('active');
+            $('.main-content').css('margin-left', '0');
+        }
+        $('#sidebarToggle i').removeClass('fa-times').addClass('fa-bars');
+    }
+});
+
+
+
+
+// js ville
+
+$(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtn').click(function() {
+                $('#cityForm').toggleClass('show');
+                $(this).toggleClass('btn-primary btn-outline-primary');
+                $(this).html($(this).hasClass('btn-outline-primary') ? 
+                    '<i class="fas fa-plus-circle me-2"></i>Ajouter une ville' : 
+                    '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#cityForm').removeClass('show');
+                $('#showFormBtn').removeClass('btn-outline-primary').addClass('btn-primary')
+                    .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une ville');
+                $('#addCityForm')[0].reset();
+            });
+            
+            // Simulation d'enregistrement (à remplacer par du vrai code)
+            $('#addCityForm').submit(function(e) {
+                e.preventDefault();
+                
+                // Ici, vous ajouteriez le code pour enregistrer en base de données
+                // Pour l'exemple, nous simulons juste l'ajout
+                const cityName = $('#cityName').val();
+                const postalCode = $('#postalCode').val();
+                const region = $('#region').val();
+                const description = $('#description').val();
+                
+                if (cityName && postalCode && region) {
+                    // Ajout à la liste
+                    $('#citiesList').html(`
+                        <tr class="city-card">
+                            <td>${cityName}</td>
+                            <td>${postalCode}</td>
+                            <td>${$('#region option:selected').text()}</td>
+                            <td>${description || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                    
+                    // Réinitialisation du formulaire
+                    $('#addCityForm')[0].reset();
+                    $('#cityForm').removeClass('show');
+                    $('#showFormBtn').removeClass('btn-outline-primary').addClass('btn-primary')
+                        .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une ville');
+                    
+                    alert('Ville enregistrée avec succès !');
+                }
+            });
+            
+            // Simulation de filtrage (à adapter avec votre vraie logique)
+            $('#searchCity, #searchPostalCode, #filterRegion').on('input change', function() {
+                // Ici, vous implémenteriez la logique de filtrage réelle
+                console.log('Filtrage appliqué :', {
+                    city: $('#searchCity').val(),
+                    postalCode: $('#searchPostalCode').val(),
+                    region: $('#filterRegion').val()
+                });
+            });
+        });
+
+
+
+    </script>
+</body>
+</html>

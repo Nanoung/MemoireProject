@@ -1,0 +1,203 @@
+    {% extends 'TravelTicket/admin/base.html' %}
+    {% block content %}
+    
+    <!-- Main Content -->
+    <div class=" main-content">
+        <div class="container-fluid">
+            <!-- Contenu principal ici -->
+                 <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-city me-2"></i>Gestion des Villes</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <button id="showFormBtn" class="btn btn-primary mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter une ville
+                </button>
+                
+                <!-- Formulaire (caché par défaut) -->
+               <div id="cityForm" class="form-container position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>Nouvelle Ville
+                        </h6>
+                        <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                            <i class="fas fa-times fs-4 text-secondary"></i>
+                        </button>
+                    </div>
+                    <form id="addCityForm" method="post" action="{% url 'ville' %}">
+                        {% csrf_token %}
+                        <input type="text" name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="id_city_name" class="form-label">Nom de la ville</label>
+                                {{ form.nom }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_region" class="form-label">Region</label>
+                                {{ form.region }}
+                            </div>
+                            <div class="col-md-4 d-flex justify-content-center align-items-center">
+                                <div class="d-flex justify-content-end" style="position: relative; left: 100px;">
+
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-save me-2"></i>                
+                                        {% if id_edit %}
+                                            Modifier
+                                        {% else %}
+                                            Enregistrer
+
+                                        {% endif %}             
+                                    
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Filtre et Affichage -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0"><i class="fas fa-filter me-1"></i>Par villes</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>####</th>
+                                <th>Nom</th>
+                                <th>Région</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            {% if villes %}
+                                {% for ville in villes %}
+                                    <tr class="city-card">
+                                        <td>{{ ville.id }}</td>
+                                        <td>{{ ville.nom }}</td>
+                                        <td>{{ ville.region }}</td>
+                                        <td>{{ ville.latitude }}</td>
+                                        <td>{{ ville.longitude }}</td>
+                                        <td>
+                                            <a href="{% url 'ville_edit' ville.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ ville.id }}" 
+                                                data-nom="{{ ville.nom }}"
+                                                data-region="{{ ville.region }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'ville_delete' ville.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette ville ?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Aucune ville enregistrée</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    </div>
+    </div>
+
+    {% endblock %}
+
+    {% block scripts %}
+        <script>
+
+            $(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtn').click(function() {
+                $('#cityForm').toggleClass('show');
+                $(this).toggleClass('btn-primary btn-outline-primary');
+                $(this).html($(this).hasClass('btn-outline-primary') ? 
+                    '<i class="fas fa-plus-circle me-2"></i>Ajouter une ville' : 
+                    '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#cityForm').removeClass('show');
+                $('#showFormBtn').removeClass('btn-outline-primary').addClass('btn-primary')
+                    .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une ville');
+                $('#addCityForm')[0].reset();
+            });
+
+
+    //         $('.edit-btn').click(function (e) {
+    //     e.preventDefault();
+
+    //     const villeId = $(this).data('id');
+    //     const nom = $(this).data('nom');
+    //     const region = $(this).data('region');
+
+    //     // Remplir le formulaire
+    //     $('#ville_id').val(villeId);
+    //     $('#id_nom').val(nom);
+    //     $('#id_region').val(region);
+
+    //     // Afficher le formulaire
+    //     $('#cityForm').addClass('show');
+
+    //     // Mettre à jour le bouton "Ajouter une ville"
+    //     $('#showFormBtn')
+    //         .removeClass('btn-outline-primary')
+    //         .addClass('btn-primary')
+    //         .html('<i class="fas fa-times me-2"></i>Fermer');
+    // });
+
+            
+
+        });
+
+    // $(document).ready(function() {
+    // $('.editCityBtn').click(function(e) {
+        // e.preventDefault(); // éviter le comportement normal du lien
+        // var villeId = $(this).data('id');
+        // window.location.href = "TravelTicket/admin/ville/edit/" + villeId + "/";
+
+        
+
+        // Afficher le formulaire
+    //     $('#cityForm').show();
+
+
+    // });
+    // });
+
+        </script>
+
+{% if id_edit %}
+    <script>
+        $(document).ready(function() {
+            $('#cityForm').show();  // Affiche le formulaire automatiquement
+            // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+        });
+    </script>
+{% endif %}
+
+        
+    {% endblock %}

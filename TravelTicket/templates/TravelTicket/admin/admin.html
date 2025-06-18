@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Gare Routière</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Reset et Polices */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        /* Layout Principal */
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar fixe */
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+
+        /* En-tête fixe */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .search-bar {
+            display: flex;
+        }
+
+        .search-bar input {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            outline: none;
+        }
+
+        .search-bar button {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Menu de navigation */
+        .logo {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo img {
+            width: 40px;
+        }
+
+        .nav-links {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #34495e;
+            color: white;
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Contenu Principal */
+        .content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        /* Styles pour les pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Widgets */
+        .dashboard-widgets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .widget {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .widget-info h3 {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .widget-info .count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .widget-icon {
+            font-size: 40px;
+            color: #3498db;
+            opacity: 0.3;
+        }
+
+        /* Activité Récente */
+        .recent-activity {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .recent-activity h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7f8c8d;
+        }
+
+        .activity-icon.success {
+            background: #e8f8f5;
+            color: #2ecc71;
+        }
+
+        .activity-icon.warning {
+            background: #fff8e1;
+            color: #f39c12;
+        }
+
+        .activity-details p {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+
+        /* Tableaux de données */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #2c3e50;
+            font-size: 18px;
+        }
+
+        .btn-add {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status.active {
+            background: #e8f8f5;
+            color: #2ecc71;
+        }
+
+        .status.delayed {
+            background: #fff8e1;
+            color: #f39c12;
+        }
+
+        .btn-action {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+
+        .btn-action.edit {
+            color: #3498db;
+        }
+
+        .btn-action.delete {
+            color: #e74c3c;
+        }
+
+        .btn-action:hover {
+            background: #f1f1f1;
+        }
+
+        /* Styles spécifiques aux pages */
+        .page-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation Fixe -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="logo-fluxbus.png" alt="FluxBus">
+                <h2>Admin Gare</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="#" class="nav-link" data-page="buses"><i class="fas fa-bus"></i> Gestion des Bus</a></li>
+                <li><a href="#" class="nav-link" data-page="routes"><i class="fas fa-route"></i> Itinéraires</a></li>
+                <li><a href="#" class="nav-link" data-page="schedules"><i class="fas fa-calendar-alt"></i> Horaires</a></li>
+                <li><a href="#" class="nav-link" data-page="bookings"><i class="fas fa-ticket-alt"></i> Réservations</a></li>
+                <li><a href="#" class="nav-link" data-page="passengers"><i class="fas fa-users"></i> Passagers</a></li>
+                <li><a href="#" class="nav-link" data-page="stats"><i class="fas fa-chart-line"></i> Statistiques</a></li>
+                <li><a href="#" class="nav-link" data-page="settings"><i class="fas fa-cog"></i> Paramètres</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <header class="admin-header">
+                <div class="search-bar">
+                    <input type="text" placeholder="Rechercher...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+                <div class="user-profile">
+                    <img src="admin-avatar.jpg" alt="Admin">
+                    <span>Admin Gare</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- Page Dashboard -->
+                <div class="page active" id="dashboard-page">
+                    <h1 class="page-title">Tableau de Bord</h1>
+                    
+                    <section class="dashboard-widgets">
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Bus en Circulation</h3>
+                                <span class="count">24</span>
+                            </div>
+                            <i class="fas fa-bus widget-icon"></i>
+                        </div>
+                        
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Départs Aujourd'hui</h3>
+                                <span class="count">58</span>
+                            </div>
+                            <i class="fas fa-calendar-day widget-icon"></i>
+                        </div>
+                        
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Réservations</h3>
+                                <span class="count">327</span>
+                            </div>
+                            <i class="fas fa-ticket-alt widget-icon"></i>
+                        </div>
+                        
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Alertes</h3>
+                                <span class="count">3</span>
+                            </div>
+                            <i class="fas fa-exclamation-triangle widget-icon"></i>
+                        </div>
+                    </section>
+
+                    <section class="recent-activity">
+                        <h2>Activité Récente</h2>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon success">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="activity-details">
+                                    <p>Bus #4521 a quitté la gare à l'heure</p>
+                                    <span class="activity-time">10:24 AM</span>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon warning">
+                                    <i class="fas fa-exclamation"></i>
+                                </div>
+                                <div class="activity-details">
+                                    <p>Retard signalé pour le bus #7842 (15 min)</p>
+                                    <span class="activity-time">09:45 AM</span>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="activity-details">
+                                    <p>Nouvelle réservation pour Lyon-Paris</p>
+                                    <span class="activity-time">09:30 AM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Page Gestion des Bus -->
+                <div class="page" id="buses-page">
+                    <h1 class="page-title">Gestion des Bus</h1>
+                    
+                    <div class="section-header">
+                        <h2>Liste des Bus</h2>
+                        <button class="btn-add" id="add-bus-btn"><i class="fas fa-plus"></i> Ajouter Bus</button>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Bus</th>
+                                <th>Modèle</th>
+                                <th>Capacité</th>
+                                <th>Statut</th>
+                                <th>Prochaine Maintenance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#4521</td>
+                                <td>Mercedes Tourismo</td>
+                                <td>52 places</td>
+                                <td><span class="status active">En circulation</span></td>
+                                <td>15/06/2023</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#7842</td>
+                                <td>Volvo 9700</td>
+                                <td>60 places</td>
+                                <td><span class="status delayed">Retardé</span></td>
+                                <td>22/05/2023</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Formulaire d'ajout/modification (caché par défaut) -->
+                    <div class="bus-form-container" style="display: none; margin-top: 30px;">
+                        <h2>Ajouter/Modifier un Bus</h2>
+                        <form id="bus-form">
+                            <div class="form-group">
+                                <label for="bus-model">Modèle</label>
+                                <input type="text" id="bus-model" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="bus-capacity">Capacité</label>
+                                <input type="number" id="bus-capacity" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="bus-status">Statut</label>
+                                <select id="bus-status" class="form-control" required>
+                                    <option value="active">En circulation</option>
+                                    <option value="maintenance">En maintenance</option>
+                                    <option value="out">Hors service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bus-maintenance">Prochaine maintenance</label>
+                                <input type="date" id="bus-maintenance" class="form-control" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="cancel-bus-btn">Annuler</button>
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Page Itinéraires -->
+                <div class="page" id="routes-page">
+                    <h1 class="page-title">Gestion des Itinéraires</h1>
+                    
+                    <div class="section-header">
+                        <h2>Liste des Itinéraires</h2>
+                        <button class="btn-add"><i class="fas fa-plus"></i> Ajouter Itinéraire</button>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Départ</th>
+                                <th>Arrivée</th>
+                                <th>Durée</th>
+                                <th>Distance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#RT001</td>
+                                <td>Paris</td>
+                                <td>Lyon</td>
+                                <td>4h 30min</td>
+                                <td>465 km</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#RT002</td>
+                                <td>Marseille</td>
+                                <td>Nice</td>
+                                <td>2h 15min</td>
+                                <td>200 km</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Page Horaires -->
+                <div class="page" id="schedules-page">
+                    <h1 class="page-title">Gestion des Horaires</h1>
+                    
+                    <div class="section-header">
+                        <h2>Calendrier des Départs</h2>
+                        <button class="btn-add"><i class="fas fa-plus"></i> Ajouter Horaire</button>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Itinéraire</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Bus</th>
+                                <th>Places</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#SC001</td>
+                                <td>Paris - Lyon</td>
+                                <td>15/06/2023</td>
+                                <td>08:00</td>
+                                <td>#4521</td>
+                                <td>12/52</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#SC002</td>
+                                <td>Marseille - Nice</td>
+                                <td>16/06/2023</td>
+                                <td>14:30</td>
+                                <td>#7842</td>
+                                <td>45/60</td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Page Réservations -->
+                <div class="page" id="bookings-page">
+                    <h1 class="page-title">Gestion des Réservations</h1>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Statut:</label>
+                            <select>
+                                <option>Toutes</option>
+                                <option>Confirmées</option>
+                                <option>En attente</option>
+                                <option>Annulées</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Date:</label>
+                            <input type="date">
+                        </div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Réf.</th>
+                                <th>Passager</th>
+                                <th>Itinéraire</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#BK23061501</td>
+                                <td>Dupont Jean</td>
+                                <td>Paris - Lyon</td>
+                                <td>15/06/2023</td>
+                                <td>08:00</td>
+                                <td><span class="status active">Confirmée</span></td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#BK23061502</td>
+                                <td>Martin Sophie</td>
+                                <td>Marseille - Nice</td>
+                                <td>16/06/2023</td>
+                                <td>14:30</td>
+                                <td><span class="status delayed">En attente</span></td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Page Passagers -->
+                <div class="page" id="passengers-page">
+                    <h1 class="page-title">Gestion des Passagers</h1>
+                    
+                    <div class="section-header">
+                        <h2>Liste des Passagers</h2>
+                        <div class="search-bar">
+                            <input type="text" placeholder="Rechercher un passager...">
+                            <button><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Abonnement</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#PS001</td>
+                                <td>Dupont</td>
+                                <td>Jean</td>
+                                <td>jean.dupont@example.com</td>
+                                <td>0612345678</td>
+                                <td><span class="status active">Actif</span></td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#PS002</td>
+                                <td>Martin</td>
+                                <td>Sophie</td>
+                                <td>sophie.martin@example.com</td>
+                                <td>0698765432</td>
+                                <td><span class="status">Inactif</span></td>
+                                <td>
+                                    <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Page Statistiques -->
+                <div class="page" id="stats-page">
+                    <h1 class="page-title">Statistiques</h1>
+                    
+                    <div class="dashboard-widgets">
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Réservations ce mois</h3>
+                                <span class="count">1,245</span>
+                                <small>+12% vs mois dernier</small>
+                            </div>
+                            <i class="fas fa-chart-bar widget-icon"></i>
+                        </div>
+                        
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Taux de remplissage</h3>
+                                <span class="count">78%</span>
+                                <small>+5% vs mois dernier</small>
+                            </div>
+                            <i class="fas fa-percent widget-icon"></i>
+                        </div>
+                        
+                        <div class="widget">
+                            <div class="widget-info">
+                                <h3>Recette totale</h3>
+                                <span class="count">€24,568</span>
+                                <small>+8% vs mois dernier</small>
+                            </div>
+                            <i class="fas fa-euro-sign widget-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 8px; padding: 20px; margin-top: 20px;">
+                        <h2>Réservations par itinéraire (30 derniers jours)</h2>
+                        <div style="height: 300px; background: #f9f9f9; display: flex; align-items: center; justify-content: center;">
+                            [Graphique à implémenter]
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page Paramètres -->
+                <div class="page" id="settings-page">
+                    <h1 class="page-title">Paramètres</h1>
+                    
+                    <div class="settings-tabs">
+                        <div class="tabs-header">
+                            <button class="tab-btn active" data-tab="general">Général</button>
+                            <button class="tab-btn" data-tab="notifications">Notifications</button>
+                            <button class="tab-btn" data-tab="security">Sécurité</button>
+                        </div>
+                        
+                        <div class="tab-content active" id="general-tab">
+                            <form>
+                                <div class="form-group">
+                                    <label>Nom de la gare</label>
+                                    <input type="text" class="form-control" value="Gare Centrale FluxBus">
+                                </div>
+                                <div class="form-group">
+                                    <label>Adresse</label>
+                                    <input type="text" class="form-control" value="123 Avenue des Bus, Paris">
+                                </div>
+                                <div class="form-group">
+                                    <label>Heure d'ouverture</label>
+                                    <input type="time" class="form-control" value="05:00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Heure de fermeture</label>
+                                    <input type="time" class="form-control" value="23:00">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="tab-content" id="notifications-tab">
+                            <form>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" checked> Alertes retards
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" checked> Nouvelles réservations
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox"> Maintenance programmée
+                                    </label>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="tab-content" id="security-tab">
+                            <form>
+                                <div class="form-group">
+                                    <label>Mot de passe actuel</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nouveau mot de passe</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirmer le nouveau mot de passe</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gestion de la navigation entre pages
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pages = document.querySelectorAll('.page');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Retirer la classe active de tous les liens
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    // Ajouter la classe active au lien cliqué
+                    this.classList.add('active');
+                    
+                    // Cacher toutes les pages
+                    pages.forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    
+                    // Afficher la page correspondante
+                    const pageId = this.getAttribute('data-page') + '-page';
+                    document.getElementById(pageId).classList.add('active');
+                });
+            });
+            
+            // Gestion des onglets dans la page Paramètres
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            if (tabBtns.length > 0) {
+                tabBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const tabId = this.getAttribute('data-tab') + '-tab';
+                        
+                        // Retirer active de tous les boutons et contenus
+                        tabBtns.forEach(b => b.classList.remove('active'));
+                        tabContents.forEach(c => c.classList.remove('active'));
+                        
+                        // Ajouter active au bouton et contenu cliqué
+                        this.classList.add('active');
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+            }
+            
+            // Gestion du formulaire de bus (exemple)
+            const addBusBtn = document.getElementById('add-bus-btn');
+            const busFormContainer = document.querySelector('.bus-form-container');
+            const cancelBusBtn = document.getElementById('cancel-bus-btn');
+            
+            if (addBusBtn && busFormContainer) {
+                addBusBtn.addEventListener('click', function() {
+                    busFormContainer.style.display = 'block';
+                });
+                
+                cancelBusBtn.addEventListener('click', function() {
+                    busFormContainer.style.display = 'none';
+                });
+                
+                document.getElementById('bus-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // Ici, vous ajouteriez le code pour enregistrer le bus
+                    alert('Bus enregistré avec succès!');
+                    busFormContainer.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

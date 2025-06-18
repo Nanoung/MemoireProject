@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://kit.fontawesome.com/yourkitid.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <h1>Tableau de Bord</h1>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <ul class="nav-links">
+        <li><a href="#" class="nav-link active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="#" class="nav-link" data-page="buses"><i class="fas fa-bus"></i> Gestion des Bus</a></li>
+        <li><a href="#" class="nav-link" data-page="routes"><i class="fas fa-route"></i> Itinéraires</a></li>
+        <li><a href="#" class="nav-link" data-page="schedules"><i class="fas fa-calendar-alt"></i> Horaires</a></li>
+        <li><a href="#" class="nav-link" data-page="bookings"><i class="fas fa-ticket-alt"></i> Réservations</a></li>
+        <li><a href="#" class="nav-link" data-page="passengers"><i class="fas fa-users"></i> Passagers</a></li>
+        <li><a href="#" class="nav-link" data-page="stats"><i class="fas fa-chart-line"></i> Statistiques</a></li>
+      </ul>
+    </nav>
+
+    <main id="content">
+      <!-- Le contenu dynamique sera chargé ici -->
+    </main>
+  </div>
+
+
+        <!-- Dashboard Content -->
+        <div class="container-fluid">
+            <h2 class="mb-4">Tableau de bord</h2>
+            
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Réservations</h5>
+                                    <h2 class="mb-0">1,254</h2>
+                                </div>
+                                <i class="fas fa-ticket-alt card-icon"></i>
+                            </div>
+                            <p class="card-text mt-2">+12% ce mois-ci</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Bus actifs</h5>
+                                    <h2 class="mb-0">42</h2>
+                                </div>
+                                <i class="fas fa-bus card-icon"></i>
+                            </div>
+                            <p class="card-text mt-2">3 en maintenance</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Itinéraires</h5>
+                                    <h2 class="mb-0">78</h2>
+                                </div>
+                                <i class="fas fa-route card-icon"></i>
+                            </div>
+                            <p class="card-text mt-2">5 nouveaux</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Clients</h5>
+                                    <h2 class="mb-0">8,742</h2>
+                                </div>
+                                <i class="fas fa-users card-icon"></i>
+                            </div>
+                            <p class="card-text mt-2">+5% ce mois-ci</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Bookings -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card dashboard-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Réservations récentes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID Réservation</th>
+                                            <th>Client</th>
+                                            <th>Itinéraire</th>
+                                            <th>Date</th>
+                                            <th>Sièges</th>
+                                            <th>Prix</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>FB-12548</td>
+                                            <td>Jean Dupont</td>
+                                            <td>Paris → Lyon</td>
+                                            <td>15/06/2023</td>
+                                            <td>2</td>
+                                            <td>€58.00</td>
+                                            <td><span class="badge bg-success">Confirmé</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">Voir</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>FB-12547</td>
+                                            <td>Marie Martin</td>
+                                            <td>Lyon → Marseille</td>
+                                            <td>14/06/2023</td>
+                                            <td>1</td>
+                                            <td>€32.50</td>
+                                            <td><span class="badge bg-success">Confirmé</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">Voir</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>FB-12546</td>
+                                            <td>Pierre Durand</td>
+                                            <td>Bordeaux → Toulouse</td>
+                                            <td>13/06/2023</td>
+                                            <td>3</td>
+                                            <td>€87.00</td>
+                                            <td><span class="badge bg-warning">En attente</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">Voir</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
