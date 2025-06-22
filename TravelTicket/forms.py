@@ -1,10 +1,10 @@
 
 
 
-from datetime import date
+from datetime import date, timedelta
 from django import forms
 
-from TravelTicket.models import Avantage, Car, Client, Conducteur, Gare, Horaire, Ligne, TypeCar, Ville
+from TravelTicket.models import Avantage, Car, Client, Conducteur, Gare, Horaire, Ligne, Segment, SegmentTypeCar, TypeCar, Ville
 
 """
 class TrajetForm(forms.ModelForm):
@@ -244,6 +244,7 @@ class ConducteurForm(forms.ModelForm):
             'car': forms.Select(attrs={
                 'id': 'car',
                 'class': 'form-control',
+                'required': False  
             })
             
         }
@@ -339,12 +340,17 @@ class GareForm(forms.ModelForm):
             }),
           
         }
+        def clean_contact(self):
+            contact = self.cleaned_data['contact']
+            if Conducteur.objects.filter(contact=contact).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("Ce numéro de contact est déjà utilisé.")
+            return contact
 
 
 class LigneForm(forms.ModelForm):
     class Meta:
         model = Ligne
-        fields = ['depart', 'arrive','villeligne','duree']
+        fields = ['depart', 'arrive','villeligne']
         widgets = {
             'depart': forms.Select(attrs={
                 'class': 'form-control form-control',
@@ -362,21 +368,146 @@ class LigneForm(forms.ModelForm):
                 'class': 'form-control',
                 'id': 'villeligne',
                 'required': 'required',
-                'multiple': 'multiple'
+                'multiple': 'multiple',
+                'style': 'width: 100%;'
             }),
-            'duree': forms.NumberInput(attrs={
+            # 'duree': forms.NumberInput(attrs={
+            #     'class': 'form-control',
+            #     'id': 'duree',
+            #     'required': 'required'
+            # }),
+            
+            
+        }
+        # def __init__(self, *args, **kwargs):
+        #     super().__init__(*args, **kwargs)
+        #     self.fields['depart'].empty_label = "Sélectionnez Départ"
+
+
+        
+
+# class AssignConducteurForm(forms.Form):
+#     # Champ pour sélectionner un conducteur sans car
+#     conducteur = forms.ModelMultipleChoiceField(
+#         queryset=Conducteur.objects.filter(car__isnull=True),
+#         widget=forms.SelectMultiple(attrs={
+#             'class': 'form-select select2-multiple',
+#             'data-placeholder': 'Sélectionnez des conducteurs',
+#             'multiple': 'multiple',
+#             'id': 'conducteurassigne'
+#         })
+#     )
+
+class AssignConducteurForm(forms.Form):
+    conducteur = forms.ModelMultipleChoiceField(
+        queryset=Conducteur.objects.filter(car__isnull=True),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-multiple',
+            'data-placeholder': 'Sélectionnez des conducteurs',
+            'style': 'width: 100%',
+            'multiple': 'multiple',
+            'id': 'conducteurassigne'
+        })
+    )
+
+
+class SegmentForm(forms.ModelForm):
+    class Meta:
+        model = Segment
+        fields = ['villedepart','villearrivee','typevoyage','duree']
+        widgets = {
+            'villedepart': forms.Select(attrs={
+                'class': 'form-control form-control',
+                'id': 'villedepart',
+                'placeholder': 'Ex: Abidjan',
+                'required': 'required'
+            }),
+            'villearrivee': forms.Select(attrs={
+                'class': 'form-control form-control',
+                'id': 'villearrivee',
+                'placeholder': 'Ex: Korhogo',
+                'required': 'required'
+            }),
+            'typevoyage': forms.SelectMultiple(attrs={
+                'class': 'form-control',
+                'id': 'typevoyage',
+                'required': 'required',
+                'multiple': 'multiple',
+                # 'style': 'width: 100%;'
+            }),
+            'duree': forms.TimeInput(attrs={
                 'class': 'form-control',
                 'id': 'duree',
-                'required': 'required'
+                'required': 'required',
+                'placeholder': 'HH:MM:SS',
+                'type': 'time',
+                'step': '1'
             }),
             
             
         }
+
+    # def clean_duree(self):
+    #     time_obj = self.cleaned_data.get('duree')
+    #     if not time_obj:
+    #         return None
+            
+    #     # Convertit l'objet time en timedelta
+    #     return timedelta(
+    #         hours=time_obj.hour,
+    #         minutes=time_obj.minute,
+    #         seconds=time_obj.second
+    #     )
+
+
+
+
+    # forms.py
+
+class SegmentTarifForm(forms.Form):
+    segment = forms.ModelChoiceField(
+        queryset=Segment.objects.all(),
+        # label="Choisissez un segment",
+        widget=forms.Select(attrs={
+            'id': 'segment-select',
+            'hx-get': '/load-typecar-fields/',
+            'hx-target': '#typecar-fields',
+            'hx-trigger': 'change',
+            'class': 'form-select form-control'
+        })
+    )
+  
+
+class SegmentTarifEditForm(forms.ModelForm):
+    class Meta:
+        model = SegmentTypeCar
+        fields = ['segment','typecar','tarif']
+        widgets = {
+            'segment': forms.TextInput(attrs={
+                'class': 'form-control form-control',
+                'id': 'segment',
+                # 'placeholder': 'Ex: Abidjan',
+                'disabled': 'disabled',
+                'required': 'required'
+            
+            }),
+            'typecar': forms.TextInput(attrs={
+                'class': 'form-control form-control',
+                'id': 'typecar',
+                # 'placeholder': 'Ex: Korhogo',
+                'disabled': 'disabled',
+                'required': 'required'
+            }),
+            'tarif': forms.TextInput(attrs={
+                'class': 'form-control',
+                'id': 'tarif',
+                'required': 'required',
+                # 'style': 'width: 100%;'
+            }),
        
-
-
-
-
+            
+            
+        }
 
 
 # class ClientForm(forms.ModelForm):

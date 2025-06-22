@@ -1,0 +1,69 @@
+<!-- Button trigger modal -->
+
+
+<!-- Modal -->
+<!-- <div class="modal fade" id="exampleModal_{{car.id}}" data-bs-backdrop="static" tabindex="-1" aria-labelledby="exampleModalLabel{{car.id}}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+        <h6 class="modal-title fs-5" id="exampleModalLabel">Assigner Conducteur</h6>
+        <button type="button" class="btn-close btn-sm btn-warning" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'assigneconducteur' car.id %}" method="POST">
+           {% csrf_token %}
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="conducteurassigne" class="form-label"></label>
+                      {{ assignerForm.conducteur }}
+                </div>
+            </div>
+          
+        </form>
+        </div>
+      <div class="modal-footer">
+          <div class="d-grid">
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-save me-2"></i> 
+                                {% if id_editassigne %}
+                                    Modifier
+                                {% else %}
+                                Ajouter
+                                {% endif %}
+                </button>
+            </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+
+<div class="modal fade" id="assignModal{{car.id}}" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+        <h6 class="modal-title fs-5">Assigner Conducteurs au car {{car.immatriculation}}</h6>
+        <button type="button" class="btn-close btn-sm btn-warning" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'assigneconducteur' car.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label for="conductlist" class="form-label">Conducteurs</label>            
+              {{ assignerForm.conducteur }}
+            </div>
+          </div>
+        </div>
+        <small class="text-muted">Ctrl+Click pour sélection plusieurs conducteurs</small>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-save me-2"></i>
+            Assigner
+          </button>
+        </div>
+      </form>
+      
+    </div>
+  </div>
+</div>

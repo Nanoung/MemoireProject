@@ -1,0 +1,268 @@
+
+    {% extends 'TravelTicket/admin/base.html' %}
+
+    {% block css %}
+        <style>
+                #LigneForm {
+                    display: none;
+                }
+
+                #LigneForm.show {
+                    display: block;
+                }
+            
+           .form-select {
+                display: block;
+                width: 980px;
+               
+            }
+             
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }      .select2-container--default .select2-selection--multiple {
+                min-height: 50px;
+                padding: 5px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background-color: #e9f5ff;
+                border-color: #f6ea80;
+                color: #747b29;
+                padding: 0 8px;
+                margin-top: 5px;
+                border-radius: 10px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                color: #0d6efd;
+                margin-right: 5px;
+            }
+        
+        </style>
+
+
+    {% endblock css %}
+
+
+{% block content %}
+
+    <div class="main-content " style="position: relative; top: 50px;">
+        <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-road  me-2"></i>Ligne</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <button id="showFormBtn" class="btn btn-warning mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne
+                </button>
+        </div>
+        <div class="card shadow" id="LigneForm">
+            <div class=" d-flex justify-content-between align-items-start mb-3 card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+
+                <h6><i class="fas fa-tags me-2"></i>Nouvelle Ligne</h6>
+                <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                    <i class="fas fa-times fs-4 text-secondary"></i>
+                </button>
+            </div>
+           
+
+            <div class="card-body container-fluid">
+                <form method="post" id="addLigneForm" action="{% if id_edit %}{% url 'ligne_edit' id_edit %}{% else %}{% url 'ligne' %}{% endif %}">
+                    {% csrf_token %}
+                    <input type="text" name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
+
+
+                    <!-- Titre -->
+                    <div class="row">
+                        <div class="mb-4 col-md-3">
+                            <label for="{{ form.depart.id_for_label }}" class="form-label fw-bold">
+                                {{ form.depart.label }}
+                            </label>
+                            {{ form.depart }}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4 col-md-3">
+                            <label for="{{ form.arrive.id_for_label }}" class="form-label fw-bold">
+                                {{ form.arrive.label }}
+                            </label>
+                            {{ form.arrive }}
+                        </div>
+                    
+                        <div class="mb-4 col-md-6">
+                            <label for="{{ form.villeligne.id_for_label }}" class="form-label fw-bold d-block">
+                                {{ form.villeligne.label }}
+                            </label>
+                            {{ form.villeligne }}
+                        </div>
+                    </div>              
+
+                     <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if id_edit %}
+                                    Modifier Ligne
+                                {% else %}
+                                Ajouter Ligne
+                                {% endif %}
+
+                            </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+                 
+
+
+        <!-- Section Filtre et Affichage -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0"><i class="fas fa-filter me-1"></i>Depart</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>##</th>
+                                <th>Depart</th>
+                                <th>Arrivee</th>
+                                <th>Villes Servies</th>
+                                <th>Actions</th>
+                               
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            {%if lignes %}
+                                {% for ligne in lignes %}
+                                <tr class="city-card">
+                                    <td>{{ ligne.id }}</td>
+                                    <td>{{ ligne.depart }}</td>
+                                    <td>{{ ligne.arrive }}</td>
+
+                                    <td>
+                                        <ul style="list-style-type: none;">
+                                            {% for ville in ligne.villeligne.all %}
+                                                <li class="">{{ ville}}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                     <td>
+                                            <a href="{% url 'ligne_edit' ligne.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ ligne.id }}" 
+                                                data-nom="{{ ligne.depard }}"
+                                              >
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'ligne_delete' ligne.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer Ligne ?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            
+                                        </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Aucune Ligne enregistrée</td>
+                                </tr>
+                            {% endif %}
+
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+    <!-- JavaScript Libraries -->
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+{% block scripts %}        
+    
+    <script>
+
+             $(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtn').click(function() {
+                $('#LigneForm').toggleClass('show');
+                $(this).toggleClass('btn-primary btn-outline-warrning');
+                // $(this).html($(this).hasClass('btn-outline-primary') ? 
+                //     '<i class="fas fa-plus-circle me-2"></i>Ajouter une ville' : 
+                //     '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#LigneForm').removeClass('show');
+                // $('#showFormBtn').removeClass('btn-outline-warrning').addClass('btn-warrning')
+                //     .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne');
+                $('#addLigneForm')[0].reset();
+            });
+            
+
+        });
+
+    // $(document).ready(function() {
+    // $('.editCityBtn').click(function(e) {
+        // e.preventDefault(); // éviter le comportement normal du lien
+        // var villeId = $(this).data('id');
+        // window.location.href = "TravelTicket/admin/ville/edit/" + villeId + "/";
+
+        
+
+        // Afficher le formulaire
+    //     $('#cityForm').show();
+
+
+    // });
+    // });
+
+        </script>
+
+        {% if id_edit %}
+            <script>
+                $(document).ready(function() {
+                    $('#LigneForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+
+        <script>
+             $(document).ready(function() {
+            // Initialisation de Select2 avec formatage des options
+            $('#villeligne').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez des Villes",
+                allowClear: true
+            });
+
+            function formatOption(option) {
+                if (!option.id) return option.text;
+                const icon = $(option.element).data('icon');
+                return $('<span><i class="' + icon + ' me-2"></i>' + option.text + '</span>');
+            }
+        });
+
+        </script>
+
+
+        
+
+    {% endblock scripts %}
+
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+
+

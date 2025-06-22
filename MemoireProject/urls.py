@@ -50,6 +50,27 @@ urlpatterns = [
     path('TravelTicket/admin/gare/edit/<int:id>/', views.gare_edit, name='gare_edit'),
     path('TravelTicket/admin/gare/delete/<int:id>/', views.gare_delete, name='gare_delete'),
 
+    path('TravelTicket/admin/ligne/', views.ligne, name='ligne'),
+    path('TravelTicket/admin/ligne/edit/<int:id>/', views.ligne_edit, name='ligne_edit'),
+    path('TravelTicket/admin/ligne/delete/<int:id>/', views.ligne_delete, name='ligne_delete'),
+
+    path('TravelTicket/admin/assigneconducteur/<int:id>/', views.assigneconducteur, name='assigneconducteur'),
+    path('TravelTicket/admin/desassigneconducteur/<int:id>/', views.desassigneconducteur, name='desassigneconducteur'),
+
+    path('TravelTicket/admin/segment/', views.segment, name='segment'),
+    path('TravelTicket/admin/segment/edit/<int:id>/', views.segment_edit, name='segment_edit'),
+    path('TravelTicket/admin/segment/delete/<int:id>/', views.segment_delete, name='segment_delete'),
+
+    path('TravelTicket/admin/tarifs/', views.tarif_management, name='tarif_management'),
+    path('load-typecar-fields/', views.load_tarif_fields, name='load_typecar_fields'),
+
+    path('TravelTicket/admin/segmenttarif/edit/<int:id>/', views.segmenttarif_edit, name='segmenttarif_edit'),
+    path('TravelTicket/admin/segmenttarif/delete/<int:id>/', views.segmenttarif_delete, name='segmenttarif_delete'),
+
+
+
+
+
 
 
 

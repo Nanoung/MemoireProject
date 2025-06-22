@@ -1,0 +1,381 @@
+{% extends 'TravelTicket/admin/base.html' %}
+{% load humanize %}
+    
+
+    {% block css %}
+        <style>
+                #SegmentForm {
+                    display: none;
+                }
+
+                #SegmentForm.show {
+                    display: block;
+                }
+                #SegmentTarifForm {
+                    display: none;
+                }
+
+                #SegmentTarifForm.show {
+                    display: block;
+                }
+            
+           .form-select {
+                display: block;
+                width: 980px;
+               
+            }
+             
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }      .select2-container--default .select2-selection--multiple {
+                min-height: 50px;
+                padding: 5px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background-color: #e9f5ff;
+                border-color: #f6ea80;
+                color: #747b29;
+                padding: 0 8px;
+                margin-top: 5px;
+                border-radius: 10px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                color: #0d6efd;
+                margin-right: 5px;
+            }
+        
+        </style>
+
+
+    {% endblock css %}
+
+
+{% block content %}
+
+    <div class="main-content " style="position: relative; top: 50px;">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="position: relative; top: 50px;">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if messages %}
+            <div class="position-fixed   end-0 p-3" style="z-index: 11" style="position: relative; top: 20px;">
+                {% for message in messages %}
+                <div class=" d-flex align items-center alert alert-{{ message.tags }} alert-dismissible fade show " role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-road  me-2"></i>Segment</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <button id="showFormBtn" class="btn btn-warning mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter un Segment
+                </button>
+        </div>
+        <div class="card shadow" id="SegmentForm">
+            <div class=" d-flex justify-content-between align-items-start mb-3 card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+
+                <h6><i class="fas fa-tags me-2"></i>Nouvel Segment</h6>
+                <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                    <i class="fas fa-times fs-4 text-secondary"></i>
+                </button>
+            </div>
+           
+
+            <div class="card-body container-fluid">
+
+                <form method="post" id="addSegmentForm" action="{% url 'tarif_management' %}">
+                    {% csrf_token %}
+                    <input type="text" class="form-control"  name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
+                    <!-- Titre -->
+                    <div class="mb-3">
+                        <label for="segment" class="form-label">Segment</label>
+                        <!-- {{ form.segment.label_tag }} -->
+                        {{ form.segment }}
+                    </div>
+                    <div id="tarif-fields">
+                        <!-- Les champs de tarif apparaîtront ici après sélection -->
+                    </div>
+                    
+                    <!-- Zone dynamique pour les tarifs -->
+                                
+
+                     <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if id_edit %}
+                                    Modifier Ligne
+                                {% else %}
+                                Ajouter Ligne
+
+                                {% endif %}
+
+                            </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+ 
+    {% if id_edittarif %}    
+
+    <div class="card shadow" id="SegmentTarifForm">
+            <div class=" d-flex justify-content-between align-items-start mb-3 card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+
+                <h6><i class="fas fa-tags me-2"></i>Modifier Tarif Segment</h6>
+                <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                    <i class="fas fa-times fs-4 text-secondary"></i>
+                </button>
+            </div>
+           
+
+            <div class="card-body container-fluid">
+
+                <form method="post" id="addSegmentTarifForm" action="{% url 'segmenttarif_edit' id_edittarif %} ">
+                    {% csrf_token %}
+                    <input type="text" class="form-control"  name="id_edittarif" value="{{ id_edittarif|default:'' }}" id="id_edittarif" hidden>
+                    <!-- Titre -->
+                     <div class="row">
+                        <div class="mb-3 col-md-4">
+                            <label for="segment" class="form-label">Segment</label>
+                            <!-- {{ form.segment.label_tag }} -->
+                            {{ formtarif.segment }}
+                            <input type="hidden" name="segment" value="{{ segmenttarif.segment.id }}">
+
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <label for="typecar" class="form-label">typevoyage</label>
+                            <!-- {{ form.segment.label_tag }} -->
+                            {{ formtarif.typecar }}
+                            <input type="hidden" name="typecar" value="{{ segmenttarif.typecar.id }}">
+
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <label for="tarif" class="form-label">Tarif</label>
+                            <!-- {{ form.segment.label_tag }} -->
+                            {{ formtarif.tarif }}
+                        </div>
+                    </div>
+                    
+                    <!-- Zone dynamique pour les tarifs -->
+                                
+
+                     <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if id_edit %}
+                                    Modifier Ligne
+                                {% else %}
+                                Ajouter Ligne
+
+                                {% endif %}
+
+                            </button>
+                    </div>
+                </form>
+            </div>
+    </div>
+
+    {% endif %}
+                 
+
+
+        <!-- Section Filtre et Affichage -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0"><i class="fas fa-filter me-1"></i>Ville</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>##</th>
+                                <th>Depart</th>
+                                <th>Arrivee</th>
+                                <th>Type</th>
+                                <th>Tarifs</th>
+
+                                <th>Actions</th>
+                               
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            {%if segmentTypeCars %}
+                                {% for segment in segmentTypeCars %}
+                                <tr class="city-card">
+                                    <td>{{ segment.id }}</td>
+                                    <td>{{ segment.segment.villedepart }}</td>
+                                    <td>{{ segment.segment.villearrivee }}</td>
+
+                                    <td>{{ segment.typecar }}</td>
+                                    <td>{{ segment.tarif|intcomma }} FCFA</td>
+
+                                    <!-- <td> -->
+                                        <!-- <ul style="list-style-type: none;">
+                                            {% for segment in segment.typecar.all %}
+                                                <li class="">{{ ville}}</li>
+                                            {% endfor %}
+                                        </ul> -->
+                                    <!-- </td> -->
+                                     <td>
+                                            <a href="{% url 'segmenttarif_edit' segment.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ segment.id }}" 
+                                                data-nom=""
+                                              >
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'segmenttarif_delete' segment.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer Segment ?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            
+                                        </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Aucun Segment enregistré</td>
+                                </tr>
+                            {% endif %}
+
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+    <!-- JavaScript Libraries -->
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+{% block scripts %}        
+    
+    <script>
+
+             $(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtn').click(function() {
+                $('#SegmentForm').toggleClass('show');
+                $(this).toggleClass('btn-primary btn-outline-warrning');
+                // $(this).html($(this).hasClass('btn-outline-primary') ? 
+                //     '<i class="fas fa-plus-circle me-2"></i>Ajouter une ville' : 
+                //     '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#SegmentForm').removeClass('show');
+                // $('#showFormBtn').removeClass('btn-outline-warrning').addClass('btn-warrning')
+                //     .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne');
+                $('#addSegmentForm')[0].reset();
+            });
+            
+
+        });
+
+    // $(document).ready(function() {
+    // $('.editCityBtn').click(function(e) {
+        // e.preventDefault(); // éviter le comportement normal du lien
+        // var villeId = $(this).data('id');
+        // window.location.href = "TravelTicket/admin/ville/edit/" + villeId + "/";
+
+        
+
+        // Afficher le formulaire
+    //     $('#cityForm').show();
+
+
+    // });
+    // });
+
+        </script>
+
+        {% if id_edit %}
+            <script>
+                $(document).ready(function() {
+                    $('#SegmentForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+
+        <script>
+             $(document).ready(function() {
+            // Initialisation de Select2 avec formatage des options
+            $('#typevoyage').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez des Villes",
+                allowClear: true
+            });
+
+            function formatOption(option) {
+                if (!option.id) return option.text;
+                const icon = $(option.element).data('icon');
+                return $('<span><i class="' + icon + ' me-2"></i>' + option.text + '</span>');
+            }
+        });
+
+        </script>
+    
+        
+<!-- Assurez-vous que cet élément existe AVANT votre script -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectElement = document.getElementById('segment-select');
+    const targetElement = document.getElementById('tarif-fields');
+    
+    if (!selectElement || !targetElement) {
+        console.error('Éléments introuvables dans le DOM');
+        return;
+    }
+
+    selectElement.addEventListener('change', function() {
+        fetch(`/load-typecar-fields/?segment=${this.value}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    targetElement.innerHTML = data.html;
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+    });
+});
+</script>
+
+
+        {% if id_edittarif %}
+            <script>
+                $(document).ready(function() {
+                    $('#SegmentTarifForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+
+        
+
+    {% endblock scripts %}
+
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+
+

@@ -17,7 +17,7 @@ class Ville(models.Model):
 
 class Gare(models.Model):
         nom=models.CharField(max_length=100)
-        ville=models.ForeignKey(Ville, on_delete=models.CASCADE)
+        ville=models.ForeignKey(Ville, on_delete=models.CASCADE, related_name='ville')
         adresse=models.CharField(max_length=100)
         longitude=models.FloatField( null=True, blank=True)
         latitude=models.FloatField( null=True, blank=True)
@@ -27,7 +27,7 @@ class Gare(models.Model):
         dateupdate=models.DateTimeField(auto_now=True)
         
         def __str__(self):
-            return f"{self.nom}"
+            return f"{self.ville}({self.nom})"
         
 class Image(models.Model):
         gare=models.ForeignKey(Gare, on_delete=models.CASCADE ,related_name='images')
@@ -49,7 +49,7 @@ class User(models.Model):
         nom=models.CharField(max_length=100)
         prenom=models.CharField(max_length=100)
         profil=models.ForeignKey(Profil, on_delete=models. PROTECT)
-        gare=models.ForeignKey(Gare, on_delete=models. CASCADE)
+        gare=models.ForeignKey(Gare, on_delete=models. CASCADE) #relation manytomany
         datecreate=models.DateTimeField(auto_now_add=True)
         dateupdate=models.DateTimeField(auto_now=True)
 
@@ -108,7 +108,7 @@ class Conducteur(models.Model):
         nom=models.CharField(max_length=100)
         prenom=models.CharField(max_length=100)
         contact=models.CharField(max_length=14, unique=True)
-        car=models.ForeignKey(Car, on_delete=models.SET_NULL , null=True)        
+        car=models.ForeignKey(Car, on_delete=models.SET_NULL ,blank=True, null=True)        
         datecreate=models.DateTimeField(auto_now_add=True)
         dateupdate=models.DateTimeField(auto_now=True)
         def __str__(self):
@@ -122,7 +122,7 @@ class Ligne(models.Model):
     depart=models.ForeignKey(Gare, on_delete=models.CASCADE , related_name='depart')
     arrive=models.ForeignKey(Gare, on_delete=models.CASCADE,  related_name='arrive')
     villeligne=models.ManyToManyField(Ville , related_name='villeligne')
-    duree=models.FloatField()
+    # duree=models.FloatField()
     datecreate=models.DateTimeField(auto_now_add=True)
     dateupdate=models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -142,14 +142,14 @@ class Programme(models.Model):
         datecreate=models.DateTimeField(auto_now_add=True)
         dateupdate=models.DateTimeField(auto_now=True)
         def __str__(self):
-            return f"{self.villedepart} -> {self.villearrivee}"
+            return f"{self.villedepart} <-> {self.villearrivee}"
 
 class Segment(models.Model):
         villedepart=models.ForeignKey(Ville, on_delete=models.CASCADE, related_name='villedepart')
         villearrivee=models.ForeignKey(Ville, on_delete=models.CASCADE, related_name='villearrivee')
         typevoyage=models.ManyToManyField(TypeCar)
-        duree=models.FloatField()
-        distance=models.FloatField()
+        duree=models.TimeField()
+        distance=models.DurationField( null=True, blank=True)
         def __str__(self):
             return f"{self.villedepart} -> {self.villearrivee}"
         
@@ -160,7 +160,7 @@ class Segment(models.Model):
 class SegmentTypeCar(models.Model):
         segment=models.ForeignKey(Segment, on_delete=models.CASCADE)
         typecar=models.ForeignKey(TypeCar, on_delete=models.CASCADE)
-        tarif=models.FloatField()
+        tarif=models.IntegerField()
         def __str__(self):
             return f"{self.segment} -> {self.typecar} -> {self.tarif}"
         class Meta:

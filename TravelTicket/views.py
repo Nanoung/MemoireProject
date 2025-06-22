@@ -1,10 +1,11 @@
 import base64
 from pyexpat.errors import messages
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 import requests
 
-from TravelTicket.models import Car, Conducteur, Gare, Image, TypeCar, Ville
-from TravelTicket.forms import AvantageCarForm, CarForm, CityForm, ConducteurForm, GareForm, TrajetHoraireForm, TypeCarForm
+from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Segment, SegmentTypeCar, TypeCar, Ville
+from TravelTicket.forms import AssignConducteurForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, GareForm, LigneForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
 from geopy.geocoders import Nominatim
 import requests
 import json
@@ -170,6 +171,7 @@ def conducteur(request):
     
     form = ConducteurForm(request.POST or None, request.FILES or None)
     conducteurs = Conducteur.objects.all()
+    print("bien jouer propor okok")
 
     if request.method == 'POST' and form.is_valid():
         try:
@@ -225,11 +227,13 @@ def conducteur(request):
             
             if device_response.status_code == 200:
                 conducteur.traccar_device_id = device_response.json().get("id")
-                messages.success(request, "Conducteur et appareil créés avec succès!")
+                # messages.success(request, "Conducteur et appareil créés avec succès!")
             else:
                 raise Exception(f"Erreur création appareil: {device_response.text}")
             
             conducteur.save()
+            messages.success(request, "Conducteur ajouté avec succès !")
+
             return redirect('conducteur')
 
         except Exception as e:
@@ -269,20 +273,56 @@ def conducteur_edit(request, id):
 
 
 def conducteur_delete(request, id):
+    TRACCAR_SERVER ="https://8d44-196-47-128-150.ngrok-free.app"
+    API_USER = "admin"
+    API_PASSWORD = "admin"
     conducteur = get_object_or_404(Conducteur, id=id)
-    conducteur.delete()
+    search_response_position = requests.get(
+        f"{TRACCAR_SERVER}/api/devices?uniqueId=Nanou20",
+        headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
+        )
+    print( "search_response_position",search_response_position.json())
+
+    # 1. Récupérer le positionId depuis la réponse de l'appareil
+    position_id = search_response_position.json()[0].get("positionId")
+    print( "position_id",position_id)
+
+    # 2. Requête pour obtenir les détails de la position
+
+    position_response = requests.get(
+        f"{TRACCAR_SERVER}/api/positions?id={position_id}",
+        headers={
+            "Authorization": "Basic " + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()
+        }
+    )
+    print( "position_response",position_response.json())
+    # conducteur.delete()
+    if conducteur.delete():
+        search_response = requests.get(
+        f"{TRACCAR_SERVER}/api/devices?uniqueId=DRV{id}",
+        headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
+        )
+        print(search_response.json())
+
+        if search_response.status_code == 200 and search_response.json():
+            device_id = search_response.json()[0].get("id")
+            requests.delete(f"{TRACCAR_SERVER}/api/devices/{device_id}", headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()})
+            # Puis supprimer avec l'ID trouvé...
+    
     return redirect('conducteur')
 
 
 
 def car(request):
+    assignerForm = AssignConducteurForm()
+    conducteurs_nonassignes = Conducteur.objects.filter(car__isnull=True)
     cars=Car.objects.all()
     form = CarForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         print(request.POST)
         form.save()
         return redirect('car')  # Remplace par ta route cible
-    return render(request, 'TravelTicket/admin/pages/Cars.html', {'form': form,'cars': cars})
+    return render(request, 'TravelTicket/admin/pages/Cars.html', {'form': form,'cars': cars, 'assignerForm': assignerForm, 'conducteurs_nonassignes': conducteurs_nonassignes})
 
 
 def car_edit(request, id):
@@ -366,7 +406,7 @@ def gare(request):
 def gare_edit(request, id):
     gare_edit = Gare.objects.get(pk=id)
     images=Image.objects.filter(gare=gare_edit)
-    print("images", images)
+    print("images", images) 
     # print("car",conducteur_edit.car)
 
     print("bien jouer ICI", gare_edit)
@@ -412,3 +452,281 @@ def gare_delete(request, id):
     gare = get_object_or_404(Gare, id=id)
     gare.delete()
     return redirect('gare')
+
+
+
+def ligne(request):
+    lignes=Ligne.objects.all()
+    print("lignes", lignes)
+    form = LigneForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        print(request.POST)
+        form.save()
+        return redirect('ligne')  # Remplace par ta route cible
+    return render(request, 'TravelTicket/admin/pages/ligne.html', {'form': form,'lignes': lignes})
+
+
+def ligne_edit(request, id):
+    ligne_edit = Ligne.objects.get(pk=id)
+    # print("car",conducteur_edit.car)
+
+    print("bien jouer ICI", ligne_edit)
+    print("METHOD:", request.method)
+
+
+
+    if request.method == 'POST':
+        form = LigneForm(request.POST, instance=ligne_edit)
+        print("bien jouerddf ICI")
+
+        if form.is_valid():
+            print("bien jouer")
+            form.save()
+            return redirect('ligne') 
+    else:
+        form = LigneForm(instance=ligne_edit)  
+        print("form", form)
+    lignes = Ligne.objects.all()
+
+    return render(request, 'TravelTicket/admin/pages/ligne.html', {'form': form,'id_edit': id, 'lignes': lignes})
+
+
+
+def ligne_delete(request, id):
+    ligne = get_object_or_404(Ligne, id=id)
+    ligne.delete()
+    return redirect('ligne')
+
+
+
+def assigneconducteur(request, id):
+    car = get_object_or_404(Car, id=id)
+    # assignform = AssignConducteurForm(request.POST or None, instance=conducteur)
+
+    if request.method == 'POST':
+        form = AssignConducteurForm(request.POST)
+        if form.is_valid():
+            conducteursSelect = form.cleaned_data['conducteur']
+
+
+            for conducteur in conducteursSelect:
+                conducteurup = Conducteur.objects.get(id=conducteur.id)
+                conducteurup.car = car
+                conducteurup.save(update_fields=['car'])
+               
+            return redirect('car')
+    else:
+        form = AssignConducteurForm()
+
+    # conducteur = Conducteur.objects.filter(car__isnull=True)
+
+    return redirect('car')
+
+def desassigneconducteur(request, id):
+    conducteurup = get_object_or_404(Conducteur, id=id)
+
+    conducteurup.car=None
+    conducteurup.save(update_fields=['car'])
+          
+    return redirect('car')
+   
+
+def segment(request):
+    segments=Segment.objects.all()
+    print("segments", segments)
+    form = SegmentForm(request.POST or None)
+    print("Segmentform", form)
+    if request.method == 'POST' and form.is_valid():
+        print(request.POST)
+        form.save()
+        return redirect('segment')
+    else:
+            # Affiche toutes les erreurs dans la console
+        print("Erreurs du formulaire:")
+        for field, errors in form.errors.items():
+            print(f"Champ {field}: {', '.join(errors)}")
+            print("Données POST:", request.POST)
+    return render(request, 'TravelTicket/admin/pages/segment.html', {'form': form,'segments': segments})
+
+
+def segment_edit(request, id):
+    segment_edit = Segment.objects.get(pk=id)
+    # print("car",conducteur_edit.car)
+
+    print("bien jouer ICI", segment_edit)
+    print("METHOD:", request.method)
+
+
+
+    if request.method == 'POST':
+        form = SegmentForm(request.POST, instance=segment_edit)
+        print("bien jouerddf ICI")
+
+        if form.is_valid():
+            print("bien jouer")
+            form.save()
+            messages.success(request, "Segment enregistré avec succès !")
+
+            return redirect('segment') 
+    else:
+        form = SegmentForm(instance=segment_edit)  
+        print("form", form)
+    segments = Segment.objects.all()
+
+    return render(request, 'TravelTicket/admin/pages/segment.html', {'form': form,'id_edit': id, 'segments': segments})
+
+
+
+def segment_delete(request, id):
+    segment = get_object_or_404(Segment, id=id)
+    segment.delete()
+    return redirect('segment')
+
+
+
+
+
+def tarif_management(request):
+    segmentTypeCars = SegmentTypeCar.objects.all()
+    print("tarif_management",SegmentTarifForm())
+    if request.method == 'POST':
+        segment = request.POST.get('segment')
+        
+        # Traitement de chaque tarif
+        for key, value in request.POST.items():
+            if key.startswith('tarif_'):
+                typecar_id = key.split('_')[1]
+                SegmentTypeCar.objects.update_or_create(
+                    segment_id=segment,
+                    typecar_id=typecar_id,
+                    defaults={'tarif': int(value)}
+                )
+        return redirect('tarif_management')
+    
+    return render(request, 'TravelTicket/admin/pages/tarifsegment.html', {
+        'form': SegmentTarifForm(),
+        'segmentTypeCars': segmentTypeCars,
+        'formtarif': SegmentTarifEditForm(),
+        # 'id_edittarif':"0"
+    })
+
+# def load_tarif_fields(request):
+#     print("load_tarif_fields")
+#     segment_id = request.GET.get('segment') 
+#     print("segment_id", segment_id)
+#     segment = get_object_or_404(Segment, id=segment_id)
+#     print("segment", segment)
+
+#     if not segment_id:
+#         print("pas de segment")
+#         return JsonResponse({'html': ''})
+    
+#     # typecars = TypeCar.objects.filter(
+#     #     segmenttypecar__segment_id=segment_id
+#     # ).distinct()
+#     typecars=segment.typevoyage.all()
+#     print("typevoyage", typecars)
+
+#     try:
+#         # segment = Segment.objects.get(pk=segment_id)
+#         # types_car = segment.typevoyage.all()
+        
+#         html = ""
+#         for type_car in typecars:
+#             html += f"""
+#             <div class="form-group mb-3">
+#                 <label class="form-label">Tarif pour {type_car.libele}</label>
+#                 <input type="number" 
+#                        name="tarif_{type_car.id}" 
+#                        class="form-control"
+#                        step="0.01"
+#                        required>
+#             </div>
+#             """
+        
+#         return JsonResponse({'html': html})
+    
+#     except Segment.DoesNotExist:
+#         return HttpResponse("<div class='alert alert-danger'>Segment introuvable</div>")
+
+from django.http import JsonResponse
+
+def load_tarif_fields(request):
+    segment_id = request.GET.get('segment')
+    if not segment_id:
+        return JsonResponse({'html': '<div class="alert alert-danger">Aucun segment sélectionné</div>'})
+    
+    try:
+        segment = Segment.objects.get(pk=segment_id)
+        typecars = segment.typevoyage.all()
+        
+        if not typecars.exists():
+            return JsonResponse({'html': '<div class="alert alert-info">Aucun type de véhicule associé à ce segment</div>'})
+        
+        html = ""
+        for type_car in typecars:
+            # Utilisez getattr pour éviter les erreurs si libele n'existe pas
+            label = getattr(type_car, 'libele', f"Type {type_car.id}")
+            
+            html += f"""
+            <div class="form-group mb-3">
+                <label class="form-label">Tarif pour {label}</label>
+                <input type="number" 
+                       name="tarif_{type_car.id}" 
+                       class="form-control"
+                       step="0.01"
+                       min="500"
+                       required>
+            </div>
+            """
+        
+        return JsonResponse({'html': html})
+    
+    except Segment.DoesNotExist:
+        return JsonResponse({'html': '<div class="alert alert-danger">Segment introuvable</div>'})
+    except Exception as e:
+        return JsonResponse({'html': f'<div class="alert alert-danger">Erreur: {str(e)}</div>'})
+    
+
+
+
+def segmenttarif_edit(request, id):
+    segmenttarif_edit = SegmentTypeCar.objects.get(pk=id)
+    # print("car",conducteur_edit.car)
+    print("segment tarif  PPOOOOOD")
+
+    print("bien jouer ICI", segmenttarif_edit)
+    print("METHOD:", request.method)
+
+
+
+    if request.method == 'POST':
+        form = SegmentTarifEditForm(request.POST, instance=segmenttarif_edit)
+        print("bien jouerddf ICI")
+        print("formtarifff", form)
+
+        if form.is_valid():
+            print("bien jouer")
+            form.save()
+            messages.success(request, "Segment enregistré avec succès !")
+
+            return redirect('tarif_management') 
+    else:
+        form = SegmentTarifEditForm(instance=segmenttarif_edit, initial={
+        'segment': str(segmenttarif_edit.segment),  # affichera "Abidjan -> Bouaké"
+        'typecar': str(segmenttarif_edit.typecar),  # affichera "Car VIP", etc.
+        })
+        print("form", form)
+    segmentTypeCars = SegmentTypeCar.objects.all()
+
+    return render(request, 'TravelTicket/admin/pages/tarifsegment.html', {'formtarif': form,'id_edittarif': id, 'segmentTypeCars': segmentTypeCars, 'segmenttarif' : segmenttarif_edit})
+
+
+
+
+def segmenttarif_delete(request, id):
+    segmenttarif = get_object_or_404(SegmentTypeCar, id=id)
+    segmenttarif.delete()
+    return redirect('tarif_management')
+
+
