@@ -67,12 +67,14 @@ urlpatterns = [
     path('TravelTicket/admin/segmenttarif/edit/<int:id>/', views.segmenttarif_edit, name='segmenttarif_edit'),
     path('TravelTicket/admin/segmenttarif/delete/<int:id>/', views.segmenttarif_delete, name='segmenttarif_delete'),
 
+    path('TravelTicket/admin/planning/', views.planning, name='planning'),
+    path('TravelTicket/admin/planning_edit/edit/<int:id>/', views.planning_edit, name='planning_edit'),
+    path('TravelTicket/admin/planning/delete/<int:id>/', views.planning_delete, name='planning_delete'),
+    path('TravelTicket/admin/planning/voyage/view/<int:id>/', views.voyage_planning, name='voyage_planning'),
 
-
-
-
-
-
+    path('TravelTicket/admin/Voyage/Assignation_Ressource/<int:id>/', views.assignation_ressource, name='assignation_ressource'),
+    path('ajax/conducteurs_Car_selectionne/', views.get_conducteurs_by_car, name='get_conducteurs_by_car'),
+    path('voyage/admin/<int:id>/changer-statut/', views.changer_statut_voyage, name='changer_statut_voyage'),
 
 
 

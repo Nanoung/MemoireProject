@@ -1,16 +1,22 @@
 import base64
+from datetime import timedelta
+import datetime
 from pyexpat.errors import messages
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 import requests
 
-from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Segment, SegmentTypeCar, TypeCar, Ville
-from TravelTicket.forms import AssignConducteurForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, GareForm, LigneForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
+from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Programme, Reservation, Segment, SegmentTypeCar, SegmentVoyage, TypeCar, Ville, Voyage
+from TravelTicket.forms import AssignConducteurForm, AssignationForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, GareForm, LigneForm, PlanningForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
 from geopy.geocoders import Nominatim
 import requests
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
+from django.utils.timezone import now
+from datetime import datetime, timedelta
+
+
 
 
 # Create your views here.
@@ -165,9 +171,9 @@ def avantage(request):
 
 def conducteur(request):
     # Configuration Traccar
-    TRACCAR_SERVER ="https://8d44-196-47-128-150.ngrok-free.app"
+    TRACCAR_SERVER ="https://b649-160-154-230-120.ngrok-free.app" 
     API_USER = "admin"
-    API_PASSWORD = "admin"
+    API_PASSWORD = "admin"  
     
     form = ConducteurForm(request.POST or None, request.FILES or None)
     conducteurs = Conducteur.objects.all()
@@ -273,7 +279,7 @@ def conducteur_edit(request, id):
 
 
 def conducteur_delete(request, id):
-    TRACCAR_SERVER ="https://8d44-196-47-128-150.ngrok-free.app"
+    TRACCAR_SERVER ="https://b649-160-154-230-120.ngrok-free.app"
     API_USER = "admin"
     API_PASSWORD = "admin"
     conducteur = get_object_or_404(Conducteur, id=id)
@@ -281,21 +287,20 @@ def conducteur_delete(request, id):
         f"{TRACCAR_SERVER}/api/devices?uniqueId=Nanou20",
         headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
         )
-    print( "search_response_position",search_response_position.json())
+    # print( "search_response_position",search_response_position.json())
 
     # 1. Récupérer le positionId depuis la réponse de l'appareil
-    position_id = search_response_position.json()[0].get("positionId")
-    print( "position_id",position_id)
+    # position_id = search_response_position.json()[0].get("positionId")
+    # print( "position_id",position_id)
 
     # 2. Requête pour obtenir les détails de la position
 
-    position_response = requests.get(
-        f"{TRACCAR_SERVER}/api/positions?id={position_id}",
-        headers={
-            "Authorization": "Basic " + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()
-        }
-    )
-    print( "position_response",position_response.json())
+    # position_response = requests.get(
+    #     f"{TRACCAR_SERVER}/api/positions?id={position_id}",
+    #     headers={
+    #         "Authorization": "Basic " + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()
+    #     }
+    # )
     # conducteur.delete()
     if conducteur.delete():
         search_response = requests.get(
@@ -730,3 +735,236 @@ def segmenttarif_delete(request, id):
     return redirect('tarif_management')
 
 
+
+
+def planning(request):
+    plannings=Programme.objects.all()
+    print("plannings", plannings)
+    form = PlanningForm(request.POST or None)
+    print("PlanningForm", form)
+    if request.method == 'POST' and form.is_valid():
+        print(request.POST)
+        programme = form.save()          
+        dates = form.cleaned_data['date']
+        horaires = form.cleaned_data['horaire']
+        types = form.cleaned_data['typevoyage']
+        print("dates", dates)
+        print("horaires", horaires)
+        print("types", types)
+
+        for datev in dates:
+            print("boucle for")
+            for horaire in horaires:
+                print("boucle for horaire")
+                for typecar in types:
+                    print("boucle for typecar")
+                    voyage= Voyage.objects.create(
+                            programme=programme,
+                            date=datev,
+                            horaire=horaire,
+                            typecar=typecar
+                    )
+                    year = now().year
+                    voyage.numerovoyage = f"V{year}{voyage.pk:03d}"
+                    voyage.save()
+                    print("voyage_numerovoyage", voyage.numerovoyage)
+        return redirect('planning')
+    else:
+            # Affiche toutes les erreurs dans la console
+        print("Erreurs du formulaire:")
+        for field, errors in form.errors.items():
+            print(f"Champ {field}: {', '.join(errors)}")
+            print("Données POST:", request.POST)
+    return render(request, 'TravelTicket/admin/pages/planning.html', {'form': form,'plannings': plannings})
+
+
+def planning_edit(request, id):
+    planning_edit = Programme.objects.get(pk=id)
+    # print("car",conducteur_edit.car)
+
+    print("bien jouer ICI planning_edit", planning_edit)
+    print("METHOD:", request.method)
+
+
+
+    if request.method == 'POST':
+        form = PlanningForm(request.POST, instance=planning_edit)
+        print("bien jouerddf ICI")
+
+        if form.is_valid():
+            print("bien jouer")
+            form.save()
+
+            messages.success(request, "planning modifié avec succès !")
+
+            return redirect('planning') 
+    else:
+        form = PlanningForm(instance=planning_edit)  
+        print("form", form)
+    plannings = Programme.objects.all()
+
+    return render(request, 'TravelTicket/admin/pages/planning.html', {'form': form,'id_edit': id, 'plannings': plannings})
+
+def planning_delete(request, id):
+    planning_delete = get_object_or_404(Programme, id=id)
+    planning_delete.delete()
+    return redirect('planning')
+
+
+def voyage_planning(request, id):
+    planning = Programme.objects.get(pk=id)  # print("car",conducteur_edit.car)
+    print("bien jouer PLANNING ICI", planning)
+    voyages_planning = Voyage.objects.filter(programme=planning)
+    print("voyages_planning", voyages_planning)
+
+    print("METHOD:", request.method)
+
+    return render(request, 'TravelTicket/admin/pages/voyages_planning.html', {'voyages_planning': voyages_planning, 'planning': planning})
+
+
+def assignation_ressource(request, id):
+    voyage = get_object_or_404(Voyage, id=id)
+    planning = voyage.programme
+    # planning_id = get_object_or_404(Programme, planning=planning)
+    print("planning_id", planning.id)
+    voyages_planning=Voyage.objects.all()
+    assignbtn=12333
+    print('voyage_ Assignation_ressource', voyage)
+
+    # le typecar lié au voyage (ex: VIP)
+    typecar = voyage.typecar
+    ligne=voyage.programme.ligne
+    date=voyage.date
+    print("date", date)
+    print("ligne", ligne)
+    print("typecar", typecar)
+    departv=ligne.depart
+    arriveev=ligne.arrive
+
+    
+    if request.method == 'POST':
+        form = AssignationForm(request.POST, typecar=typecar, ligne=ligne, date=date)
+       
+
+        if form.is_valid():
+            arrets_intermediaires = list(form.cleaned_data['arrets'])
+            print("arrets_intermediaires", arrets_intermediaires)
+            arrets_complets = [departv] + arrets_intermediaires + [arriveev]
+            print("arrets_complets", arrets_complets)
+
+            voyage.car = form.cleaned_data['car']
+            voyage.conducteur = form.cleaned_data['conducteur']
+            voyage.arrets.set(form.cleaned_data['arrets'])
+            voyage.save()
+            print("voyage.save debut")
+            if voyage:
+                print("voyage save")
+
+
+                for i in range(len(arrets_complets)):
+                    print("debut assigne segemnt")
+                    for j in range(i + 1, len(arrets_complets)):
+                        depart = arrets_complets[i]
+                        arrivee = arrets_complets[j]
+                        segmenttypecar = SegmentTypeCar.objects.get(
+                        segment__villedepart=depart.ville,
+                        segment__villearrivee=arrivee.ville,
+                        typecar=typecar
+                        )
+                        print("segmenttypecar Pour elif", segmenttypecar)
+                        if departv==depart:
+                            heuredepart = voyage.horaire.heuredepart
+                            print("heure depart", heuredepart)
+
+                        # elif SegmentVoyage.objects.filter(segment__arrivee=depart.ville).exists():
+
+                        #     heuredepart = SegmentVoyage.objects.get(segment__arrivee=depart.ville).heurearrivee
+                        #     print("heure depart", heuredepart)
+                        elif SegmentVoyage.objects.filter(segment=segmenttypecar).exists():
+                            print("je suis entrer dans le elif")
+                            heuredepart = SegmentVoyage.objects.get(segment=segmenttypecar).heurearrivee
+                            print("heure depart", heuredepart)
+                            
+
+                        try:
+                            segment = Segment.objects.get(villedepart=depart.ville, villearrivee=arrivee.ville)
+                            print("depart.ville", depart.ville)
+                            print("arrivee.ville", arrivee.ville)
+                            print("typecar", typecar)
+                            print("segment Disponoble aaaaaaaaaaaaaaaaaaaaaaaaa", segment)
+                            segmenttypecar_select = SegmentTypeCar.objects.get(segment=segment, typecar=typecar)
+                            print("segmenttypecar", segmenttypecar)
+                            
+
+                            heuredepart_dt = datetime.combine(datetime.today(), heuredepart)
+                            duree_td = timedelta(hours=segment.duree.hour, minutes=segment.duree.minute, seconds=segment.duree.second)
+
+                            heurearrivee_dt = heuredepart_dt + duree_td
+                            heurearrivee = heurearrivee_dt.time()
+                            print("heuredepart", heuredepart)
+                            print("heurearrivee", heurearrivee)
+                        
+
+                            SegmentVoyage.objects.create(voyage=voyage, segment=segmenttypecar_select, plase_disponible=voyage.car.capacite, heuredepart=heuredepart, heurearrivee=heurearrivee, tarif=segmenttypecar_select.tarif)
+                            print("segment crée succes", segmenttypecar_select)
+                        except Segment.DoesNotExist:
+                            print(f"Segment non trouvé : {depart} → {arrivee}")
+
+
+
+
+            messages.success(request, "Assignation faite avec succès.")
+            return redirect('voyage_planning',id=voyage.programme.id)  # ou autre page
+    else:
+        form = AssignationForm(typecar=typecar, ligne=ligne, date=date)
+
+    return render(request, 'TravelTicket/admin/pages/voyages_planning.html', {
+        'form': form,
+        'voyages_planning': voyages_planning,
+        'assignation': assignbtn,
+        'voyage':voyage,
+        'planning':planning
+
+    })      
+
+
+
+
+def get_conducteurs_by_car(request):
+    print("get_conducteurs_by_car")
+    car_id = request.GET.get('car_id')
+    print("car_id", car_id)
+    conducteurs_data = []
+
+    if car_id:
+        try:
+            car = Car.objects.get(pk=car_id)
+            conducteurs_data = list(car.conducteur_set.values('id', 'nom'))
+        except Car.DoesNotExist:
+            pass
+
+    return JsonResponse({'conducteurs': conducteurs_data})
+
+
+def changer_statut_voyage(request, id):
+    voyage = get_object_or_404(Voyage, id=id)
+    nouveau_statut = request.POST.get('nouveau_statut')
+
+    if nouveau_statut not in ['Prévu', 'Effectué', 'Annulé', 'En cours']:
+        messages.error(request, "Statut invalide.")
+        return redirect('voyage_planning', id=voyage.programme.id)
+
+    # Vérifier si le voyage a des réservations
+    segmentvoyage = SegmentVoyage.objects.filter(voyage=voyage).first()
+    has_reservations = Reservation.objects.filter(segmentvoyage__voyage=voyage).exists()
+
+    # has_reservations = segmentvoyage.reservation_set.exists()  
+
+    if has_reservations and nouveau_statut == 'Annulé':
+        messages.warning(request, "Ce voyage a déjà des réservations et ne peut pas être annulé.")
+        return redirect('voyage_planning', id=voyage.programme.id)
+
+    voyage.statut = nouveau_statut
+    voyage.save()
+    messages.success(request, f"Statut mis à jour vers {nouveau_statut}.")
+    return redirect('voyage_planning', id=voyage.programme.id)

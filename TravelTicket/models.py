@@ -14,14 +14,13 @@ class Ville(models.Model):
         def __str__(self):
             return f"{self.nom}"
         
-
 class Gare(models.Model):
         nom=models.CharField(max_length=100)
         ville=models.ForeignKey(Ville, on_delete=models.CASCADE, related_name='ville')
         adresse=models.CharField(max_length=100)
         longitude=models.FloatField( null=True, blank=True)
         latitude=models.FloatField( null=True, blank=True)
-        contact=models.CharField(max_length=14)
+        contact=models.CharField(max_length=14,null=True, blank=True)
         email=models.EmailField(null=True,max_length=100)
         datecreate=models.DateTimeField(auto_now_add=True)
         dateupdate=models.DateTimeField(auto_now=True)
@@ -116,12 +115,14 @@ class Conducteur(models.Model):
         
 
 class Date(models.Model):
-    date= models.DateTimeField()  # Date et heure de départ
+    date= models.DateField()
+    def __str__(self):
+        return f"{self.date}"
 
 class Ligne(models.Model):
     depart=models.ForeignKey(Gare, on_delete=models.CASCADE , related_name='depart')
     arrive=models.ForeignKey(Gare, on_delete=models.CASCADE,  related_name='arrive')
-    villeligne=models.ManyToManyField(Ville , related_name='villeligne')
+    villeligne=models.ManyToManyField(Gare , related_name='villeligne') # ici Villeligne representeles gare servis par la ligne, pour ne pas faire trop de changement dans le code, je laisse intacte cette relation
     # duree=models.FloatField()
     datecreate=models.DateTimeField(auto_now_add=True)
     dateupdate=models.DateTimeField(auto_now=True)
@@ -131,18 +132,44 @@ class Ligne(models.Model):
 class Horaire(models.Model):
         heuredepart=models.TimeField()
         def __str__(self):
-            return f"{self.heuredepart} -> {self.heurearrivee}"
+            return f"{self.heuredepart}"
 
 
 class Programme(models.Model):
         ligne=models.ForeignKey(Ligne, on_delete=models.CASCADE)
         typevoyage=models.ManyToManyField(TypeCar)
         date=models.ManyToManyField(Date)
-        Horaire=models.ManyToManyField(Horaire)
+        horaire=models.ManyToManyField(Horaire)
         datecreate=models.DateTimeField(auto_now_add=True)
         dateupdate=models.DateTimeField(auto_now=True)
         def __str__(self):
-            return f"{self.villedepart} <-> {self.villearrivee}"
+            return f"{self.ligne}"
+
+class Voyage(models.Model):
+    numerovoyage = models.CharField(max_length=100, editable=False, unique=True,default=uuid.uuid4)
+    programme = models.ForeignKey('Programme', on_delete=models.CASCADE)
+    date = models.ForeignKey(Date, on_delete=models.CASCADE)
+    horaire = models.ForeignKey(Horaire, on_delete=models.CASCADE)
+    typecar = models.ForeignKey(TypeCar, on_delete=models.CASCADE)
+    car = models.ForeignKey('Car', on_delete=models.SET_NULL, null=True, blank=True)
+    conducteur = models.ForeignKey('Conducteur', on_delete=models.SET_NULL, null=True, blank=True)
+    arrets=models.ManyToManyField(Gare, blank=True)
+    datecreates=models.DateTimeField(auto_now_add=True)
+    dateupdates=models.DateTimeField(auto_now=True)
+    statut = models.CharField(max_length=50, choices=[('Prévu', 'Prévu'), ('Effectué', 'Effectué'), ('Annulé', 'Annulé'), ('En cours', 'En cours')], default='Prévu')
+
+    def __str__(self):
+        return f"{self.programme.ligne} | {self.date} - {self.horaire} ({self.typecar})"
+
+class Position(models.Model): # les position sont enregistrées si le voyage est en cours
+    longitude = models.FloatField()
+    latitude = models.FloatField()
+    voyage = models.ForeignKey(Voyage, on_delete=models.CASCADE)
+    datetime = models.DateTimeField(auto_now_add=True)
+    adresse = models.CharField(max_length=255) # via geocoding a faire apres
+
+    def __str__(self):
+        return f"{self.voyage} | {self.adresse} | {self.longitude}, {self.latitude}"
 
 class Segment(models.Model):
         villedepart=models.ForeignKey(Ville, on_delete=models.CASCADE, related_name='villedepart')
@@ -151,35 +178,31 @@ class Segment(models.Model):
         duree=models.TimeField()
         distance=models.DurationField( null=True, blank=True)
         def __str__(self):
-            return f"{self.villedepart} -> {self.villearrivee}"
+            return f"{self.villedepart} <----------> {self.villearrivee}"
         
-        # class Meta:
-        #     unique_together = ('villedepart', 'villearrivee')
 
 # cette classe gere les tarif de segment par type de voiture    
 class SegmentTypeCar(models.Model):
-        segment=models.ForeignKey(Segment, on_delete=models.CASCADE)
-        typecar=models.ForeignKey(TypeCar, on_delete=models.CASCADE)
+        segment=models.ForeignKey(Segment, on_delete=models.CASCADE , related_name='segment')
+        typecar=models.ForeignKey(TypeCar, on_delete=models.CASCADE , related_name='typecar')
         tarif=models.IntegerField()
         def __str__(self):
             return f"{self.segment} -> {self.typecar} -> {self.tarif}"
         class Meta:
             unique_together = ('segment', 'typecar')
 
-class SegmentHoraire(models.Model):
-    heuredepart = models.TimeField()   
-    heurearrivee = models.TimeField(null=True , blank=True)
+
+class SegmentVoyage(models.Model):
+    segment=models.ForeignKey(SegmentTypeCar, on_delete=models.CASCADE)
+    voyage=models.ForeignKey(Voyage, on_delete=models.CASCADE)
+    plase_disponible = models.IntegerField(default=0) # nombre de place disponible par defaut Capacité du car
+    heuredepart=models.TimeField()
+    heurearrivee=models.TimeField(null=True , blank=True)
+    tarif=models.IntegerField(default=0)
+    datecreate=models.DateTimeField(auto_now_add=True)
+    dateupdate=models.DateTimeField(auto_now=True)
     def __str__(self):
-         return f"{self.heuredepart}"
-
-class SegmentSegmentHoraire(models.Model):
-    segment= models.ForeignKey(Segment, on_delete=models.CASCADE )
-    segmenthoraire = models.ForeignKey(SegmentHoraire, on_delete=models.CASCADE)
-    placedisponible = models.IntegerField(default=0)
-
-    class Meta:
-        unique_together = ('segment', 'segmenthoraire')
-
+        return f"{self.segment} -> {self.voyage}"
 
 class Client(models.Model):
     nom = models.CharField(max_length=100)
@@ -192,33 +215,54 @@ class Client(models.Model):
     
 class Reservation(models.Model):
       
-    voyage= models.ForeignKey(SegmentSegmentHoraire,  on_delete=models.CASCADE, related_name='reservations' , null=True)
+    segmentvoyage= models.ForeignKey(SegmentVoyage,  on_delete=models.CASCADE, null=True)
     client= models.ForeignKey(Client, on_delete=models.PROTECT)
     numero_reservation = models.CharField(max_length=100, editable=False, unique=True , null=True , blank=True)  # Numéro de réservation unique
     places_reservees = models.PositiveIntegerField(default=1)  # Nombre de places réservées
     montant_reservation=models.DecimalField(max_digits=10, decimal_places=2 , default=0)
-    datereservation = models.DateTimeField(auto_now_add=True)  # Date de la réservation
+    statut = models.CharField(max_length=20, choices=[('Annulé', 'Annulé'), ('Validé', 'Validé'), ('En attente', 'En attente')],default='En attente')
+    datereservation = models.DateTimeField(auto_now_add=True) 
     dateupdate=models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.numero_reservation:
-            # Génère un numéro de réservation unique basé sur l'ID du trajet et un UUID
-            annee_courante = datetime.datetime.now().year
-            self.numero_reservation = f"TICKET-{annee_courante}-{self.voyage.id}-{uuid.uuid4().hex[:6].upper()}"    
-                
-            super().save(*args, **kwargs)
+            self.numero_reservation = f"RES-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.client} -> {self.voyage}"
     
-class Payement(models.Model):
+class Payement(models.Model): # Si payement modifier la reservation pour mettre en validé.
     reservation=models.OneToOneField(Reservation, on_delete=models.PROTECT)
     montant=models.DecimalField(max_digits=10, decimal_places=2)
     modepayement=models.CharField(max_length=100)
     reference=models.CharField(max_length=100)
-    numeropayement=models.CharField(max_length=100)
+    numeropayement=models.CharField(max_length=100) # en Gare(Espèces), En lige (Mobile money)
     datepayement=models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f"{self.reservation} -> {self.montant}"
 
+ 
+
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+
+@receiver(post_migrate)
+def create_dates_for_year(sender, **kwargs):
+    from .models import Date  # pour éviter les problèmes d'importation circulaire
+    if sender.name != "TravelTicket":
+        return  # Évite que ça tourne pour les autres apps
+
+    year = datetime.date.today().year
+    start = datetime.date(year, 1, 1)
+    end = datetime.date(year, 12, 31)
+
+    current = start
+    created_count = 0
+    while current <= end:
+        obj, created = Date.objects.get_or_create(date=current)
+        if created:
+            created_count += 1
+        current += datetime.timedelta(days=1)
+
+    print(f"✔ {created_count} dates créées pour l'année {year}")

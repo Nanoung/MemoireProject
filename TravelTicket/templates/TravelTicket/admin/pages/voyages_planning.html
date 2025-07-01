@@ -1,0 +1,356 @@
+
+    {% extends 'TravelTicket/admin/base.html' %}
+
+    {% block css %}
+        <style>
+                #AssignForm {
+                    display: none;
+                }
+
+                #AssignForm.show {
+                    display: block;
+                }
+            
+           .form-select {
+                display: block;
+                width: 980px;
+               
+            }
+             
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }      .select2-container--default .select2-selection--multiple {
+                min-height: 50px;
+                padding: 5px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background-color: #e9f5ff;
+                border-color: #f6ea80;
+                color: #747b29;
+                padding: 0 8px;
+                margin-top: 5px;
+                border-radius: 10px;
+            }
+            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                color: #0d6efd;
+                margin-right: 5px;
+            }
+        
+        </style>
+
+
+    {% endblock css %}
+
+
+{% block content %}
+
+    <div class="main-content " style="position: relative; top: 50px;">
+        <div class="col-12">
+                <h4 class="mb-4"><i class="fas fa-road  me-2"></i>Voyages Plannifiés</h4>
+                
+                <!-- Bouton Ajouter Ville -->
+                <!-- <button id="showFormBtn" class="btn btn-warning mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne
+                </button> -->
+        </div>
+        <div class="card shadow" id="AssignForm">
+            <div class=" d-flex justify-content-between align-items-start mb-3 card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
+
+                <h6><i class="fas fa-tags me-2"></i> Assignation de ressources au Voyage {{ voyage.numerovoyage }}</h6>
+                <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
+                    <i class="fas fa-times fs-4 text-secondary"></i>
+                </button>
+            </div>
+           
+
+            <div class="card-body container-fluid">
+                <form method="post" id="addAssignForm" action="">
+                    {% csrf_token %}    
+                    <input type="text" name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
+
+                    <div class="row">
+                        <div class="mb-4 col-md-12">
+                            <label for="id_arrets" class="form-label fw-bold">
+                                Arrets
+                            </label>
+                            {{ form.arrets }}
+                        </div>
+                        <div class="alert alert-warning d-flex align-items-center h-50" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <div>
+                                <strong>Attention :</strong> Veuillez sélectionner les arrêts **dans l'ordre  selon le Voyage**. L'ordre est important pour générer correctement les segments du voyage.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-4 col-md-6">
+                            <label for="id_car" class="form-label fw-bold d-block">
+                                Car
+                                
+                            </label>
+                            {{ form.car }}
+                        </div>
+                          <div class="mb-4 col-md-6">
+                            <label for="id_car" class="form-label fw-bold d-block">
+                                Conducteur
+                                
+                            </label>
+                            <!-- {{ form.conducteur }} -->
+                            <select name="conducteur" id="conducteur" class="form-control" required>
+                                <option value="">-- Choisir un conducteur --</option>
+                            </select>
+                        </div>
+                    </div>     
+
+
+                     <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if id_edit %}
+                                    Modifier Voyage
+                                {% else %}
+                                Ajouter Voyage
+                                {% endif %}
+
+                            </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+                 
+
+
+        <!-- Section Filtre et Affichage -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="filter-section p-2">
+                    <h6 class="mb-4 p-0"><i class="fas fa-filter me-1"></i>Voyage</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 " style="position: relative; top: -25px;">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Rechercher par nom...">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Liste des Villes -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>N° Voyage</th>
+                                <th>ligne</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Type</th>
+                                <th>Car</th>
+                                <th>Concucteur</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                               
+                            </tr>
+                        </thead>
+                        <tbody id="citiesList">
+                            {%if voyages_planning %}
+                                {% for voyage in voyages_planning %}
+                                <tr class="city-card">
+                                    <td>{{ voyage.numerovoyage }}</td>
+                                    <td>{{ planning }}</td>
+                                    <td >{{ voyage.date }}</td>
+                                    <td>{{ voyage.horaire }}</td>
+                                    <td>{{ voyage.typecar }}</td>
+                                    <td>{{ voyage.car }}</td>
+                                    <td>{{ voyage.conducteur }}</td>
+
+            
+
+                                    <td>
+                                        
+                                        <!-- {% if voyage.statut == "Prévu" %}
+                                            <span class="text-primary " disabled>{{ voyage.statut }}</span>
+
+                                        {% elif voyage.statut == "Effectué" %}
+                                            <span class="text-success" disabled>{{ voyage.statut }}</span>
+
+                                        {% elif voyage.statut == "Annulé" %}
+                                            <span class="text-secondary" disabled>{{ voyage.statut }}</span>
+
+                                        {% elif voyage.statut == "En cours" %}
+                                            <span class="text-info" disabled>{{ voyage.statut }}</span>
+
+                                        {% else %}
+                                            <span class="btn btn-sm btn-secondary" disabled>Inconnu</span>
+                                        {% endif %} -->
+
+                                        
+                                        <form method="post" action="{% url 'changer_statut_voyage' voyage.id %}">
+                                            {% csrf_token %}
+                                            <select name="nouveau_statut"class="form-select form-select-sm w-auto
+                                            {% if voyage.statut == 'Prévu' %} text-primary
+                                            {% elif voyage.statut == 'En cours' %} text-info
+                                            {% elif voyage.statut == 'Effectué' %} text-success
+                                            {% elif voyage.statut == 'Annulé' %} text-secondary
+                                            {% endif %}" onchange="this.form.submit()">
+                                                <option class="text-primary"  value="Prévu" {% if voyage.statut == 'Prévu' %}selected{% endif %}>Prévu</option>
+                                                <option class="text-info"  value="En cours" {% if voyage.statut == 'En cours' %}selected{% endif %}>En cours</option>
+                                                <option class="text-success"  value="Effectué" {% if voyage.statut == 'Effectué' %}selected{% endif %}>Effectué</option>
+                                                <option class="text-secondary"  value="Annulé" {% if voyage.statut == 'Annulé' %}selected{% endif %}>Annulé</option>
+                                            </select>
+                                        </form>
+
+
+                                    </td>
+
+
+                                    <!-- <td>
+                                        <ul style="list-style-type: none;">
+                                            {% for ville in ligne.villeligne.all %}
+                                                <li class="">{{ ville}}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td> -->
+                                    <td class="d-flex align-items-center">
+                                            
+                                            {% if voyage.car and voyage.conducteur %}
+                                                <a href="" class="btn btn-sm btn-outline-primary editCityBtn " data-id="{{ voyage.id }}" 
+                                                        data-nom=""
+                                                    >
+                                                        Modifier
+                                                </a>
+                                                
+                                            {% else %}
+                                                <a href="{% url 'assignation_ressource' voyage.id %}" class="btn btn-sm btn-outline-primary" id="showFormBtnAssigne" style="margin-left: 5px ;">
+                                                    Assigner
+                                                </a>
+                                                
+                                            {% endif %}
+
+                                            <a href="" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer Ligne ?');" style="margin-left: 5px ;">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            
+                                            
+                                        </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Aucune Ligne enregistrée</td>
+                                </tr>
+                            {% endif %}
+
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+    <!-- JavaScript Libraries -->
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+{% block scripts %}        
+    
+    <script>
+
+             $(document).ready(function() {
+            // Afficher/Masquer le formulaire
+            $('#showFormBtnAssigne').click(function() {
+                $('#AssignForm').toggleClass('show');
+                $(this).toggleClass('btn-primary btn-outline-warrning');
+                // $(this).html($(this).hasClass('btn-outline-primary') ? 
+                //     '<i class="fas fa-plus-circle me-2"></i>Ajouter une ville' : 
+                //     '<i class="fas fa-times me-2"></i>Fermer');
+            });
+            
+            // Annuler l'ajout
+            $('#cancelBtn').click(function() {
+                $('#AssignForm').removeClass('show');
+                // $('#showFormBtn').removeClass('btn-outline-warrning').addClass('btn-warrning')
+                //     .html('<i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne');
+                $('#addAssignForm')[0].reset();
+            });
+            
+
+        });
+
+ 
+        </script>
+
+        {% if id_edit %}
+            <script>
+                $(document).ready(function() {
+                    $('#AssignForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+        {% if assignation %}
+            <script>
+                $(document).ready(function() {
+                    $('#AssignForm').show();  // Affiche le formulaire automatiquement
+                    // $('#submitBtn').html('<i class="fas fa-save me-2"></i>Modifier');
+                });
+            </script>
+        {% endif %}
+
+      
+
+        <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+        <script>
+            $('#id_car').on('change', function () {
+                var carId = $(this).val();
+
+                $.ajax({
+                    url: '{% url "get_conducteurs_by_car" %}',
+                    data: {
+                        'car_id': carId
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        const $conducteur = $('#conducteur');
+                        $conducteur.empty().append('<option value="">-- Choisir un conducteur --</option>');
+
+                        data.conducteurs.forEach(function (conducteur) {
+                            $conducteur.append('<option value="' + conducteur.id + '">' + conducteur.nom + '</option>');
+                        });
+                    }
+                });
+            });
+        </script>
+
+          <script>
+             $(document).ready(function() {
+            // Initialisation de Select2 avec formatage des options
+            $('#id_arrets').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez des arrets",
+                allowClear: true
+            });
+
+            function formatOption(option) {
+                if (!option.id) return option.text;
+                const icon = $(option.element).data('icon');
+                return $('<span><i class="' + icon + ' me-2"></i>' + option.text + '</span>');
+            }
+        });
+        </script>
+
+
+
+        
+
+    {% endblock scripts %}
+
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+
+

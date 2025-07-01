@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 from django import forms
 
-from TravelTicket.models import Avantage, Car, Client, Conducteur, Gare, Horaire, Ligne, Segment, SegmentTypeCar, TypeCar, Ville
+from TravelTicket.models import Avantage, Car, Client, Conducteur, Date, Gare, Horaire, Ligne, Programme, Segment, SegmentTypeCar, TypeCar, Ville, Voyage
 
 """
 class TrajetForm(forms.ModelForm):
@@ -508,6 +508,113 @@ class SegmentTarifEditForm(forms.ModelForm):
             
             
         }
+
+
+
+class PlanningForm(forms.ModelForm):
+    class Meta:
+        model = Programme
+        fields = ['ligne','typevoyage','date','horaire']
+        widgets = {
+            'ligne': forms.Select(attrs={
+                'class': 'form-control form-control',
+                'id': 'ligne',
+                'placeholder': 'Ex: Abidjan',
+                'required': 'required'
+            }),
+            'typevoyage': forms.SelectMultiple(attrs={
+                'class': 'form-control form-control',
+                'id': 'typevoyage',
+                'multiple': 'multiple',
+                'required': 'required'
+            }),
+            'date': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'id': 'date',
+                'required': 'required',
+                'multiple': 'multiple',
+              
+                # 'style': 'width: 100%;'
+            }),
+              'horaire': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'id': 'horaire',
+                'required': 'required',
+                'multiple': 'multiple',
+                # 'style': 'width: 100%;'
+            }),
+         
+        }
+    
+
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            date_debut = date.today()
+            date_fin = date.today() + timedelta(days=14)
+
+            # Filtrer les dates valides
+            self.fields['date'].queryset = Date.objects.filter(date__range=(date_debut, date_fin))
+
+
+class AssignationForm(forms.Form):
+    car = forms.ModelChoiceField(
+        queryset=Car.objects.none(),  # par défaut vide
+        label="Car",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    conducteur = forms.ModelChoiceField(
+        queryset=Conducteur.objects.all(),
+        label="Conducteur",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    arrets = forms.ModelMultipleChoiceField(
+        queryset=Gare.objects.all(),
+        label="Arrêts",
+        widget=forms.SelectMultiple(attrs={'class': 'form-control', 'multiple': 'multiple'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        typecar = kwargs.pop('typecar', None)
+        ligne = kwargs.pop('ligne', None)
+        date = kwargs.pop('date', None)
+        super().__init__(*args, **kwargs)
+
+        if ligne is not None:
+            self.fields['arrets'].queryset = ligne.villeligne.all()
+        else:
+            print("ligne est None")
+            self.fields['arrets'].queryset = Gare.objects.none()
+            # print("Ligne_Gare_servies", ligne.villeligne.all())
+            # self.fields['arrets'].queryset = ligne.villeligne.all()
+
+        if typecar and ligne and date:
+            # Récupérer les cars du bon type
+            cars_dispo = Car.objects.filter(typecar=typecar)
+            print("cars_dispo", cars_dispo)
+
+            # Exclure les cars déjà affectés à un voyage sur cette ligne à cette date
+            cars_utilises = Voyage.objects.filter(
+                date=date,
+                programme__ligne=ligne,
+                car__isnull=False
+            ).values_list('car_id', flat=True)
+            print("cars_utilises", cars_utilises)
+            print("date", date)
+            # self.fields['car'].queryset = cars_dispo
+            # if cars_utilises.exists():
+            self.fields['car'].queryset = cars_dispo.exclude(id__in=cars_utilises)
+            # else:
+            #     self.fields['car'].queryset = cars_dispo
+
+        
+        else:
+            self.fields['car'].queryset = Car.objects.none()
+
+
+
 
 
 # class ClientForm(forms.ModelForm):

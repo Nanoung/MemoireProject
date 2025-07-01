@@ -155,6 +155,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>##</th>
+                                <th>Type</th>
                                 <th>Immatriculation</th>
                                 <th>Model</th>
                                 <th>Capacité</th>
@@ -167,17 +168,18 @@
                                 {% for car in cars %}
                                 <tr class="city-card">
                                     <td>{{ car.id }}</td>
+                                    <td>{{ car.typecar }}</td>
                                     <td>{{ car.immatriculation }}</td>
                                     <td>{{ car.model }}</td>
                                     <td>{{ car.capacite }}</td>
                                     <td>
                                         
-                                                <div class="d-flex align-items-center me-3">
-                                                    <button type="button" class="btn btn-primary btn-sm rounded-4 me-2" data-bs-toggle="modal" data-bs-target="#assignModal{{car.id}}"><i class="fas fa-plus"></i></i></button>
-                                                    <button type="button" class="btn btn-primary btn-sm rounded-4 " data-bs-toggle="modal" data-bs-target="#listconducteur{{car.id}}" {% if car.conducteur_set.all %}{% else %}disabled{% endif %}><i class="fas fa-users"></i></button>
+                                        <div class="d-flex align-items-center me-3">
+                                            <button type="button" class="btn btn-primary btn-sm rounded-4 me-2" data-bs-toggle="modal" data-bs-target="#assignModal{{car.id}}"><i class="fas fa-plus"></i></i></button>
+                                            <button type="button" class="btn btn-primary btn-sm rounded-4 " data-bs-toggle="modal" data-bs-target="#listconducteur{{car.id}}" {% if car.conducteur_set.all %}{% else %}disabled{% endif %}><i class="fas fa-users"></i></button>
  
 
-                                                </div>
+                                        </div>
                                       
                                     </td>
                                     

@@ -11,11 +11,11 @@
                     display: block;
                 }
             
-           .form-select {
+           /* .form-select {
                 display: block;
-                width: 980px;
+                width: 100%;
                
-            }
+            } */
              
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(-10px); }
@@ -47,17 +47,17 @@
 
     <div class="main-content " style="position: relative; top: 50px;">
         <div class="col-12">
-                <h4 class="mb-4"><i class="fas fa-road  me-2"></i>Ligne</h4>
+                <h4 class="mb-4"><i class="fas fa-road  me-2"></i>Planning</h4>
                 
                 <!-- Bouton Ajouter Ville -->
                 <button id="showFormBtn" class="btn btn-warning mb-4">
-                    <i class="fas fa-plus-circle me-2"></i>Ajouter une Ligne
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter un planning
                 </button>
         </div>
         <div class="card shadow" id="LigneForm">
             <div class=" d-flex justify-content-between align-items-start mb-3 card-header bg-white text-warning mb-2 p-2 border-2 border-warning shadow">
 
-                <h6><i class="fas fa-tags me-2"></i>Nouvelle Ligne</h6>
+                <h6><i class="fas fa-tags me-2"></i>Nouvelle planification</h6>
                 <button type="button" id="cancelBtn" class="btn btn-link p-0" aria-label="Fermer">
                     <i class="fas fa-times fs-4 text-secondary"></i>
                 </button>
@@ -65,42 +65,45 @@
            
 
             <div class="card-body container-fluid">
-                <form method="post" id="addLigneForm" action="{% if id_edit %}{% url 'ligne_edit' id_edit %}{% else %}{% url 'ligne' %}{% endif %}">
+                <form method="post" id="addLigneForm" action="{% if id_edit %}{% url 'planning_edit' id_edit %}{% else %}{% url 'planning' %}{% endif %}">
                     {% csrf_token %}
                     <input type="text" name="id_edit" value="{{ id_edit|default:'' }}" id="id_edit" hidden>
 
-
-                    <!-- Titre -->
                     <div class="row">
-                        <div class="mb-4 col-md-3">
-                            <label for="{{ form.depart.id_for_label }}" class="form-label fw-bold">
-                                {{ form.depart.label }}
+                        <div class=" col-md-12">
+                            <label for="ligne" class="form-label fw-bold d-block">
+                                Ligne
                             </label>
-                            {{ form.depart }}
+                            {{ form.ligne }}
+                        </div>
+                       
+                    
+                    </div> 
+                    
+                    <div class="row">
+                         <div class="col-md-4">
+                            <label for="typevoyage" class="form-label fw-bold d-block">
+                                Type Voyage
+                            </label>
+                            {{ form.typevoyage }}
+                        </div>
+                         
+
+                        <div class="mb-4 col-md-4">
+                            <label for="date" class="form-label fw-bold d-block">
+                                Dates
+                            </label>
+                            {{ form.date }}
                         </div>
 
-                        <!-- Description -->
-                        <div class="mb-4 col-md-3">
-                            <label for="{{ form.arrive.id_for_label }}" class="form-label fw-bold">
-                                {{ form.arrive.label }}
+                        <div class="mb-4 col-md-4">
+                            <label for="horaire" class="form-label  fw-bold d-block">
+                                Horaire
                             </label>
-                            {{ form.arrive }}
+                            {{ form.horaire }}
                         </div>
                     
-                        <div class="mb-4 col-md-6">
-                            <label for="villeligne" class="form-label fw-bold d-block">
-                                Gares Servies
-                                <!-- {{ form.villeligne.label }} -->
-                            </label>
-                            {{ form.villeligne }}
-                            <div class="alert alert-warning d-flex align-items-center" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <div>
-                                <strong>Attention :</strong> Veuillez sélectionner les gares **dans l'ordre  selon la ligne**. L'ordre est important pour gérer les voyages.
-                            </div>
-                        </div>
-                        </div>
-                    </div>              
+                    </div>
 
                      <div class="d-grid">
                             <button type="submit" class="btn btn-outline-warning btn-sm">
@@ -138,36 +141,38 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>##</th>
-                                <th>Depart</th>
-                                <th>Arrivee</th>
-                                <th>Villes Servies</th>
+                                <th>N* Planning</th>
+                                <th>Ligne</th>
+                                <th>Date</th>
+                                <th>Voir</th>
+
                                 <th>Actions</th>
                                
                             </tr>
                         </thead>
                         <tbody id="citiesList">
-                            {%if lignes %}
-                                {% for ligne in lignes %}
+                            {%if plannings %}
+                                {% for planning in plannings %}
                                 <tr class="city-card">
-                                    <td>{{ ligne.id }}</td>
-                                    <td>{{ ligne.depart }}</td>
-                                    <td>{{ ligne.arrive }}</td>
+                                    <td>{{ planning.id }}</td>
+                                    <td>{{ planning.ligne }}</td>
+                                    <td>{{ planning.datecreate }}</td>
 
                                     <td>
-                                        <ul style="list-style-type: none;">
-                                            {% for ville in ligne.villeligne.all %}
-                                                <li class="">{{ ville}}</li>
-                                            {% endfor %}
-                                        </ul>
+                                        <a href="{% url 'voyage_planning' planning.id %}" class="btn btn-sm btn-outline-success me-5 editCityBtn" data-id="{{ planning.id }}" 
+                                             
+                                              >
+                                                Voyages
+                                            </a>
+                                        
                                     </td>
                                      <td>
-                                            <a href="{% url 'ligne_edit' ligne.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ ligne.id }}" 
-                                                data-nom="{{ ligne.depard }}"
+                                            <a href="{% url 'planning_edit' planning.id %}" class="btn btn-sm btn-outline-primary me-5 editCityBtn" data-id="{{ planning.id }}" 
+                                             
                                               >
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'ligne_delete' ligne.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer Ligne ?');">
+                                            <a href="{% url 'planning_delete' planning.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer Planning ?');">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                             
@@ -176,7 +181,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Aucune Ligne enregistrée</td>
+                                    <td colspan="5" class="text-center text-muted">Aucune planification de ligne enregistrée</td>
                                 </tr>
                             {% endif %}
 
@@ -247,10 +252,30 @@
         <script>
              $(document).ready(function() {
             // Initialisation de Select2 avec formatage des options
-            $('#villeligne').select2({
+            $('#arrets').select2({
                 templateResult: formatOption,
                 templateSelection: formatOption,
-                placeholder: "Sélectionnez des Villes",
+                placeholder: "Sélectionnez des Arrets",
+                allowClear: true
+            });
+
+              $('#typevoyage').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez Type de Voyage",
+                allowClear: true
+            });
+
+               $('#horaire').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez les Horaires",
+                allowClear: true
+            });
+            $('#date').select2({
+                templateResult: formatOption,
+                templateSelection: formatOption,
+                placeholder: "Sélectionnez les Horaires",
                 allowClear: true
             });
 
@@ -261,6 +286,17 @@
             }
         });
 
+        </script>
+
+        <script>
+            flatpickr("#horaire", {
+                enableTime: true,          // Active le sélecteur d'heure
+                noCalendar: true,          // Cache le calendrier (uniquement l'heure)
+                dateFormat: "H:i",         // Format de l'heure 24h (HH:MM)
+                time_24hr: true,           // Format 24h (sinon AM/PM)
+                mode: "multiple" ,
+                locale: "fr"          // Facultatif : permet de choisir plusieurs heures
+            });
         </script>
 
 

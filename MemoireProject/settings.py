@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'MemoireProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'travelticketbd',         # Nom de la BDD
+        'NAME': 'bdtravelticketss',         # Nom de la BDD
         'USER': 'root',  # Par défaut : 'root'
         'PASSWORD': '',
         'HOST': 'localhost',
