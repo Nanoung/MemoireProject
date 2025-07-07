@@ -7,7 +7,7 @@
       <div class="container " style="margin-top: 45vh;">
           <div class="container my-5">
               <div class="search-card bg-white rounded-4 shadow p-4">
-                  <form method="post" class="trajet-form">
+                  <form method="post" class="trajet-form" action="{% url 'voyage_disponible' %}">
                   {% csrf_token %}           
                 
                       <div class="d-flex border rounded overflow-hidden" style="width: fit-content;">

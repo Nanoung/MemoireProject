@@ -1,13 +1,14 @@
 import base64
-from datetime import timedelta
+from datetime import date, timedelta
 import datetime
 from pyexpat.errors import messages
+from django.forms import modelformset_factory
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 import requests
 
-from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Programme, Reservation, Segment, SegmentTypeCar, SegmentVoyage, TypeCar, Ville, Voyage
-from TravelTicket.forms import AssignConducteurForm, AssignationForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, GareForm, LigneForm, PlanningForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
+from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Passager, Programme, Reservation, Segment, SegmentTypeCar, SegmentVoyage, TypeCar, Ville, Voyage
+from TravelTicket.forms import AssignConducteurForm, AssignationForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, DestinationForm, GareForm, LigneForm, PassagerForm, PlanningForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
 from geopy.geocoders import Nominatim
 import requests
 import json
@@ -968,3 +969,265 @@ def changer_statut_voyage(request, id):
     voyage.save()
     messages.success(request, f"Statut mis à jour vers {nouveau_statut}.")
     return redirect('voyage_planning', id=voyage.programme.id)
+
+
+
+def rechercher_voyages(request):
+    segments_allers = []
+    segments_retours = []
+    date_depart = None
+    date_precedente = None
+    date_suivante = None
+    ville_depart = ''
+    ville_arrivee = ''
+    type_voyage = 'aller_simple'
+    nombre_place = 1
+    gares = Gare.objects.all()
+    voyages_info = []
+
+
+
+    if request.method == 'GET' and 'date' in request.GET:
+        ville_depart = request.GET.get('villedepart')
+        ville_arrivee = request.GET.get('villearrivee')
+        date_str = request.GET.get('date')
+        type_voyage = request.GET.get('voyage_type', 'aller_simple')
+        nombre_place = int(request.GET.get('Nombre_place', 1))
+        print("date_str OKOKOKOKOKOKOk", date_str)
+
+        try:
+            print("verification date")
+            date_depart = datetime.strptime(date_str, '%B %d, %Y').date()
+        except ValueError:
+            print("pas de date")
+            date_depart = date.today()
+
+        date_precedente = date_depart - timedelta(days=1)
+        date_suivante = date_depart + timedelta(days=1)
+
+        segments_allers = SegmentVoyage.objects.filter(
+            segment__segment__villedepart__nom=ville_depart,
+            segment__segment__villearrivee__nom=ville_arrivee,
+            voyage__date__date=date_depart,
+            voyage__statut="Prévu",
+            plase_disponible__gt=0
+        ).select_related('voyage', 'segment__segment').distinct()
+
+        for segmentv in segments_allers:
+                voyage_planning= segmentv.voyage
+
+
+                arret_depart = next(
+
+                    (arret for arret in voyage_planning.arrets.all() if arret.ville == segmentv.segment.segment.villedepart),
+
+                        None
+
+                    )
+                arret_arrivee = next(
+
+                    (arret for arret in voyage_planning.arrets.all() if arret.ville == segmentv.segment.segment.villearrivee),
+
+                        segmentv.voyage.programme.ligne.arrive
+
+                    )
+
+                voyages_info.append({
+
+                    'voyages': segments_allers,
+
+                    'arret_depart': arret_depart,
+
+                    'arret_arrivee': arret_arrivee
+
+                    })
+            
+
+
+        # Formulaire reconstruit avec les valeurs précédentes
+        form = TrajetHoraireForm(initial={
+            'adress_depart': ville_depart,
+            'adress_arrivee': ville_arrivee,
+            'voyage_type': type_voyage,
+            'Nombre_place': nombre_place,
+            'date_depart': date_depart
+        })
+
+
+    elif request.method == 'POST':
+        form = TrajetHoraireForm(request.POST)
+        if form.is_valid():
+
+            type_voyage = form.cleaned_data['voyage_type']
+            ville_depart = form.cleaned_data['adress_depart']
+            ville_arrivee = form.cleaned_data['adress_arrivee']
+            date_depart = form.cleaned_data['date_depart']
+            date_retour = form.cleaned_data.get('date_retour')
+            nombre_place = form.cleaned_data['Nombre_place']
+            print("date_retour", date_retour)
+            print("date_depart", date_depart)
+            date_precedente = date_depart - timedelta(days=1)
+
+            # Date suivante (le lendemain)
+            date_suivante = date_depart + timedelta(days=1)
+
+
+        # la session
+            request.session['nombre_place'] = nombre_place
+
+            segments_allers = SegmentVoyage.objects.filter(
+                
+            segment__segment__villedepart__nom=ville_depart,
+            segment__segment__villearrivee__nom=ville_arrivee,
+            voyage__date__date=date_depart,
+            voyage__statut="Prévu",
+            plase_disponible__gt=0
+            ).select_related('voyage', 'segment__segment').distinct()
+
+            print("segments_allers", segments_allers)
+
+            
+            for segmentv in segments_allers:
+                voyage_planning= segmentv.voyage
+                print("segment.villedepart", segmentv.segment.segment.villedepart)
+                print("depart",segmentv.voyage.programme.ligne.depart)
+                print("voyage_planning.arrets.all", voyage_planning.arrets.all())
+
+                arret_depart = next(
+
+                    (arret for arret in voyage_planning.arrets.all() if arret.ville == segmentv.segment.segment.villedepart),
+
+                        segmentv.voyage.programme.ligne.depart
+
+                    )
+                arret_arrivee = next(
+
+                    (arret for arret in voyage_planning.arrets.all() if arret.ville == segmentv.segment.segment.villearrivee),
+
+                        segmentv.voyage.programme.ligne.arrive
+
+                    )
+
+                voyages_info.append({
+
+                    'voyages': segments_allers,
+
+                    'arret_depart': arret_depart,
+
+                    'arret_arrivee': arret_arrivee
+
+                    })
+            
+
+ 
+
+            #  Recherche retour (si aller-retour)
+            if type_voyage == 'aller_retour' and date_retour:
+                segments_retours = SegmentVoyage.objects.filter(
+                    segment__villedepart__nom=ville_arrivee,
+                    segment__villearrivee__nom=ville_depart,
+                    voyage__date__date=date_retour,
+                    voyage__statut="Prévu",
+                    plase_disponible__gt=0
+                ).select_related('voyage', 'segment').distinct()
+
+    else:
+        form = TrajetHoraireForm()
+    print("voyages_info", voyages_info)
+
+    return render(request, 'TravelTicket/voyage/searchresult.html', {
+        'form': form,
+        'segments_allers': segments_allers,
+        'segments_retours': segments_retours,
+        'date_precedente': date_precedente,
+        'date_suivante': date_suivante,
+        'date_depart' : date_depart,
+        'ville_depart': ville_depart,
+        'ville_arrivee': ville_arrivee,
+        'type_voyage': type_voyage,
+        'nombre_place': nombre_place,
+        'gares': gares,
+        'voyages_info': voyages_info
+
+    })
+
+
+
+
+def  reserver_voyage(request, id):
+    seg_voyage_id = id
+    print("seg_voyage_id", seg_voyage_id)
+    print("id", id)
+    nombre_places = request.session.get('nombre_place')
+    voyage = get_object_or_404(SegmentVoyage, pk=id)
+    voyage_complete = voyage.voyage
+    ligne = voyage_complete.programme.ligne
+    voyage_depart=ligne.depart.ville
+    voyage_arrivee=ligne.arrive.ville
+    arrets = [arret.ville for arret in voyage_complete.arrets.all()]
+    ville_voyage= [voyage_depart] + arrets + [voyage_arrivee]  
+    print("ville_voyage", ville_voyage) 
+    index_depart = ville_voyage.index(voyage.segment.segment.villedepart)
+    index_arrivee = ville_voyage.index(voyage.segment.segment.villearrivee)
+
+    villes_concernees_reservation = ville_voyage[index_depart:index_arrivee]
+    print("Villes concernées :", villes_concernees_reservation)
+    segments_voyage=SegmentVoyage.objects.filter(voyage=voyage_complete)
+
+    
+
+    print("voyage_complete", voyage_complete)
+    
+    PassagerFormSet = modelformset_factory(Passager, form=PassagerForm, extra=nombre_places)
+
+    if request.method == 'POST':
+        formset = PassagerFormSet(request.POST)
+        destination_form = DestinationForm(request.POST)
+        print("destination_form", destination_form)
+        print("formset", formset)
+
+        if formset.is_valid() and destination_form.is_valid():
+            destination = destination_form.cleaned_data['destination']
+            for form in formset:
+                if form.cleaned_data:
+                    passager = form.save(commit=False)
+                    passager.destination = destination
+                    passager.save()
+                    print("passager Passager", passager)
+                    reservation=Reservation.objects.create(
+                        # client=request.user,
+                        segmentvoyage=voyage,
+                        passager=passager,
+                        montant_reservation=voyage.tarif
+                    )
+                    reservation.save()
+                    print("passager_reservation", passager)
+                    print("reservation", reservation)
+
+                    if reservation:
+                        
+                        for segment_voyage in segments_voyage:
+                            if segment_voyage.segment.segment.villedepart in villes_concernees_reservation or segment_voyage.segment.segment.villearrivee in villes_concernees_reservation:
+                                segment_voyage.plase_disponible -= 1
+                                segment_voyage.save()
+                            
+
+
+
+
+                    
+            return redirect('payement')
+    else:
+        formset = PassagerFormSet(queryset=Passager.objects.none())
+        destination_form = DestinationForm()
+
+    return render(request, 'TravelTicket/voyage/reservation.html', {
+        'formset': formset,
+        'destination_form': destination_form,
+        'seg_voyage_id': seg_voyage_id
+
+    })
+
+
+def payement(request):
+    return render(request, 'TravelTicket/voyage/payement.html')

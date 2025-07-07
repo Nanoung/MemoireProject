@@ -208,19 +208,45 @@ class Client(models.Model):
     nom = models.CharField(max_length=100)
     prenoms = models.CharField(max_length=100)
     telephone = models.CharField(max_length=15)
+    mugepci = models.CharField(max_length=100, null=True , blank=True, unique=True)
+    datecreate=models.DateTimeField(auto_now_add=True)
+    dateupdate=models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nom} {self.prenoms}"
+
+
+class Passager(models.Model):
+    nom = models.CharField(max_length=100)
+    prenoms = models.CharField(max_length=100)
+    mugepci = models.CharField(max_length=100, null=True , blank=True, unique=True)
+    destination=models.CharField(max_length=100, null=True , blank=True)
     datecreate=models.DateTimeField(auto_now_add=True)
     dateupdate=models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.nom} {self.prenoms}"
     
+
+class Payement(models.Model): # Si payement modifier la reservation pour mettre en validé.
+    client= models.ForeignKey(Client, on_delete=models.PROTECT,null=True, blank=True)
+    montant=models.DecimalField(max_digits=10, decimal_places=2)
+    modepayement=models.CharField(max_length=100)
+    reference=models.CharField(max_length=100)
+    numeropayement=models.CharField(max_length=100) # en Gare(Espèces), En lige (Mobile money)
+    datepayement=models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.reservation} -> {self.montant}"
+    
+    
 class Reservation(models.Model):
       
     segmentvoyage= models.ForeignKey(SegmentVoyage,  on_delete=models.CASCADE, null=True)
-    client= models.ForeignKey(Client, on_delete=models.PROTECT)
+    client= models.ForeignKey(Client,on_delete=models.SET_NULL, null=True, blank=True)
+    passager= models.ForeignKey(Passager,on_delete=models.SET_NULL, null=True, blank=True,related_name='passager')
     numero_reservation = models.CharField(max_length=100, editable=False, unique=True , null=True , blank=True)  # Numéro de réservation unique
     places_reservees = models.PositiveIntegerField(default=1)  # Nombre de places réservées
     montant_reservation=models.DecimalField(max_digits=10, decimal_places=2 , default=0)
     statut = models.CharField(max_length=20, choices=[('Annulé', 'Annulé'), ('Validé', 'Validé'), ('En attente', 'En attente')],default='En attente')
+    numeropayement=models.ForeignKey(Payement, on_delete=models.PROTECT, null=True , blank=True)
     datereservation = models.DateTimeField(auto_now_add=True) 
     dateupdate=models.DateTimeField(auto_now=True)
 
@@ -230,39 +256,31 @@ class Reservation(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.client} -> {self.voyage}"
+        return f"{self.client} -> {self.segmentvoyage}-> {self.passager}"
     
-class Payement(models.Model): # Si payement modifier la reservation pour mettre en validé.
-    reservation=models.OneToOneField(Reservation, on_delete=models.PROTECT)
-    montant=models.DecimalField(max_digits=10, decimal_places=2)
-    modepayement=models.CharField(max_length=100)
-    reference=models.CharField(max_length=100)
-    numeropayement=models.CharField(max_length=100) # en Gare(Espèces), En lige (Mobile money)
-    datepayement=models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return f"{self.reservation} -> {self.montant}"
+
 
  
 
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
+# from django.db.models.signals import post_migrate
+# from django.dispatch import receiver
 
-@receiver(post_migrate)
-def create_dates_for_year(sender, **kwargs):
-    from .models import Date  # pour éviter les problèmes d'importation circulaire
-    if sender.name != "TravelTicket":
-        return  # Évite que ça tourne pour les autres apps
+# @receiver(post_migrate)
+# def create_dates_for_year(sender, **kwargs):
+#     from .models import Date  # pour éviter les problèmes d'importation circulaire
+#     if sender.name != "TravelTicket":
+#         return  # Évite que ça tourne pour les autres apps
 
-    year = datetime.date.today().year
-    start = datetime.date(year, 1, 1)
-    end = datetime.date(year, 12, 31)
+#     year = datetime.date.today().year
+#     start = datetime.date(year, 1, 1)
+#     end = datetime.date(year, 12, 31)
 
-    current = start
-    created_count = 0
-    while current <= end:
-        obj, created = Date.objects.get_or_create(date=current)
-        if created:
-            created_count += 1
-        current += datetime.timedelta(days=1)
+#     current = start
+#     created_count = 0
+#     while current <= end:
+#         obj, created = Date.objects.get_or_create(date=current)
+#         if created:
+#             created_count += 1
+#         current += datetime.timedelta(days=1)
 
-    print(f"✔ {created_count} dates créées pour l'année {year}")
+#     print(f"✔ {created_count} dates créées pour l'année {year}")

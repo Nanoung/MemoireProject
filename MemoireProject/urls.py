@@ -25,7 +25,12 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('home/', views.home, name='home'),
+    path('Chonco_Transport/TravelTicket/home/', views.home, name='home'),
+    path('Chonco_Transport/TravelTicket/Voyages/', views.rechercher_voyages, name='voyage_disponible'),
+    path('Chonco_Transport/TravelTicket/Voyage/<int:id>/reservation/', views.reserver_voyage, name='reserver_voyage'),
+    path('Chonco_Transport/TravelTicket/reservation/payement/', views.payement, name='payement'),
+
+
     path('TravelTicket/admin/ville/', views.ville, name='ville'),
     # path('TravelTicket/admin/ville/add/', views.ville_add, name='ville-add'),
     path('TravelTicket/admin/ville/edit/<int:id>/', views.ville_edit, name='ville_edit'),
@@ -76,9 +81,13 @@ urlpatterns = [
     path('ajax/conducteurs_Car_selectionne/', views.get_conducteurs_by_car, name='get_conducteurs_by_car'),
     path('voyage/admin/<int:id>/changer-statut/', views.changer_statut_voyage, name='changer_statut_voyage'),
 
+    path('voyage/admin/<int:id>/changer-statut/', views.changer_statut_voyage, name='changer_statut_voyage'),
+
+
 
 
 
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+print("urls chargées")

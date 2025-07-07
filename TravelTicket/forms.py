@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 from django import forms
 
-from TravelTicket.models import Avantage, Car, Client, Conducteur, Date, Gare, Horaire, Ligne, Programme, Segment, SegmentTypeCar, TypeCar, Ville, Voyage
+from TravelTicket.models import Avantage, Car, Client, Conducteur, Date, Gare, Horaire, Ligne, Passager, Programme, Segment, SegmentTypeCar, TypeCar, Ville, Voyage
 
 """
 class TrajetForm(forms.ModelForm):
@@ -587,8 +587,8 @@ class AssignationForm(forms.Form):
         else:
             print("ligne est None")
             self.fields['arrets'].queryset = Gare.objects.none()
-            # print("Ligne_Gare_servies", ligne.villeligne.all())
-            # self.fields['arrets'].queryset = ligne.villeligne.all()
+            print("Ligne_Gare_servies", ligne.villeligne.all())
+            self.fields['arrets'].queryset = ligne.villeligne.all()
 
         if typecar and ligne and date:
             # Récupérer les cars du bon type
@@ -612,6 +612,37 @@ class AssignationForm(forms.Form):
         
         else:
             self.fields['car'].queryset = Car.objects.none()
+
+
+class PassagerForm(forms.ModelForm):
+    class Meta:
+        model = Passager
+        fields = ['nom', 'prenoms','mugepci','destination']
+        widgets = {
+            'nom': forms.TextInput(attrs={
+                'class': 'form-control py-2',
+                'placeholder': 'Entrez le nom'
+            }),
+            'prenoms': forms.TextInput(attrs={
+                'class': 'form-control py-2',
+                'placeholder': 'Entrez les prénoms'
+            }),
+
+            'mugepci': forms.TextInput(attrs={
+                'class': 'form-control py-2',
+            }),
+            'destination': forms.Select(attrs={
+                'class': 'form-control py-2',
+            }),
+        }
+
+class DestinationForm(forms.Form):
+    destination = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control py-2',
+            'placeholder': 'Ex: Napie'   
+        }),
+    )
 
 
 
