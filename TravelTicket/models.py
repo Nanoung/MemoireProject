@@ -1,6 +1,7 @@
 import datetime
 import uuid
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 # Create your models here.
 
@@ -203,14 +204,20 @@ class SegmentVoyage(models.Model):
     dateupdate=models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.segment} -> {self.voyage}"
+    
+
+
+
+# Gestionnaire du modèle Client
 
 class Client(models.Model):
     nom = models.CharField(max_length=100)
     prenoms = models.CharField(max_length=100)
-    telephone = models.CharField(max_length=15)
+    telephone = models.CharField(max_length=15, unique=True)
     mugepci = models.CharField(max_length=100, null=True , blank=True, unique=True)
     datecreate=models.DateTimeField(auto_now_add=True)
     dateupdate=models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"{self.nom} {self.prenoms}"
 
@@ -245,8 +252,10 @@ class Reservation(models.Model):
     numero_reservation = models.CharField(max_length=100, editable=False, unique=True , null=True , blank=True)  # Numéro de réservation unique
     places_reservees = models.PositiveIntegerField(default=1)  # Nombre de places réservées
     montant_reservation=models.DecimalField(max_digits=10, decimal_places=2 , default=0)
+    montant_a_payer=models.IntegerField(default=0)
     statut = models.CharField(max_length=20, choices=[('Annulé', 'Annulé'), ('Validé', 'Validé'), ('En attente', 'En attente')],default='En attente')
     numeropayement=models.ForeignKey(Payement, on_delete=models.PROTECT, null=True , blank=True)
+    panier_code = models.CharField(max_length=100, null=True, blank=True)
     datereservation = models.DateTimeField(auto_now_add=True) 
     dateupdate=models.DateTimeField(auto_now=True)
 
@@ -257,6 +266,14 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"{self.client} -> {self.segmentvoyage}-> {self.passager}"
+    
+class Remise(models.Model):
+    libele=models.CharField(max_length=100)
+    montant=models.IntegerField()
+    datecreate=models.DateTimeField(auto_now_add=True)
+    dateupdate=models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.libele} -> {self.montant}"
     
 
 

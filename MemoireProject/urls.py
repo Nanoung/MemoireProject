@@ -28,8 +28,17 @@ urlpatterns = [
     path('Chonco_Transport/TravelTicket/home/', views.home, name='home'),
     path('Chonco_Transport/TravelTicket/Voyages/', views.rechercher_voyages, name='voyage_disponible'),
     path('Chonco_Transport/TravelTicket/Voyage/<int:id>/reservation/', views.reserver_voyage, name='reserver_voyage'),
-    path('Chonco_Transport/TravelTicket/reservation/payement/', views.payement, name='payement'),
+    path('Chonco_Transport/TravelTicket/reservation/detail_panier/<str:panier_code>/', views.detail_panier, name='detail_panier'),
+    path('Chonco_Transport/TravelTicket/reservation/paiement/<str:panier_code>/', views.payement, name='payement'),
+    path('Chonco_Transport/TravelTicket/reservation/confirmation/', views.payement_success, name='payement_success'),
 
+    path('Chonco_Transport/TravelTicket/Voyage/', views.suivre_recherche, name='suivre_recherche'),
+
+
+
+    path('Chonco_Transport/Compte/inscription/', views.compte_client, name='compte_client'),
+    path('Chonco_Transport/Compte/connexion/', views.login_client, name='login_client'),
+    path('Chonco_Transport/Compte/Deconnexion/', views.logout_client, name='logout_client'),
 
     path('TravelTicket/admin/ville/', views.ville, name='ville'),
     # path('TravelTicket/admin/ville/add/', views.ville_add, name='ville-add'),

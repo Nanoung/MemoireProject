@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Paiement | CinetPay</title>
+    <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
+</head>
+<body onload="checkout()">
+
+<script>
+    function checkout() {
+         alert("checkout lancé");
+
+        console.log("Données checkout", {
+
+            apikey: "{{ apikey }}",
+            site_id: "{{ site_id }}",
+            return_url: "{{ return_url }}",
+            transaction_id: "{{ transaction_id }}",
+            amount: 200,
+            currency: 'XOF',
+            channels: 'ALL',
+            description: 'Test de paiement',
+        });
+
+        CinetPay.setConfig({
+            
+            apikey: "{{ apikey }}",                 
+            site_id: "{{ site_id }}",               
+            return_url: "{{ return_url }}",
+            // mode: 'PRODUCTION'
+            mode: 'TEST'
+        });
+        alert("checkout lancéee");
+
+        CinetPay.getCheckout({
+                transaction_id: '{{ transaction_id }}',
+                amount: 200,
+                currency: 'XOF',
+                channels: 'ALL',
+                description: 'Test de paiement',   
+           
+
+        });
+
+        alert("checkout lancéee debut");
+
+        CinetPay.waitResponse(function(data) {
+            console.log("Réponse CinetPay donneee okok :", data);
+            alert("checkout  bien installee");
+            if (data.status === "ACCEPTED") {
+                alert("Paiement réussi !");
+                window.location.href = "{{ return_url }}";
+            } else if (data.status === "REFUSED") {
+                alert("Paiement refusé");
+                window.location.reload();
+            }
+        });
+
+        CinetPay.onError(function(data) {
+            console.error("Erreur CinetPay :", data);
+            alert("Erreur lors de la tentative de paiement.");
+        });
+    }
+</script>
+
+</body>
+</html>
+

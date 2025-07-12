@@ -1,14 +1,18 @@
 import base64
 from datetime import date, timedelta
 import datetime
+from functools import wraps
+import locale
 from pyexpat.errors import messages
+import uuid
+from django.conf import settings
 from django.forms import modelformset_factory
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 import requests
 
-from TravelTicket.models import Car, Conducteur, Gare, Image, Ligne, Passager, Programme, Reservation, Segment, SegmentTypeCar, SegmentVoyage, TypeCar, Ville, Voyage
-from TravelTicket.forms import AssignConducteurForm, AssignationForm, AvantageCarForm, CarForm, CityForm, ConducteurForm, DestinationForm, GareForm, LigneForm, PassagerForm, PlanningForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
+from TravelTicket.models import Car, Client, Conducteur, Gare, Image, Ligne, Passager, Programme, Remise, Reservation, Segment, SegmentTypeCar, SegmentVoyage, TypeCar, Ville, Voyage
+from TravelTicket.forms import AssignConducteurForm, AssignationForm, AvantageCarForm, CarForm, CityForm, ClientForm, ClientLoginForm, ConducteurForm, DestinationForm, GareForm, LigneForm, PassagerForm, PlanningForm, SegmentForm, SegmentTarifEditForm, SegmentTarifForm, TrajetHoraireForm, TypeCarForm
 from geopy.geocoders import Nominatim
 import requests
 import json
@@ -16,6 +20,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils.timezone import now
 from datetime import datetime, timedelta
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from twilio.rest import Client as TwilioClient
+
+
 
 
 
@@ -172,7 +181,7 @@ def avantage(request):
 
 def conducteur(request):
     # Configuration Traccar
-    TRACCAR_SERVER ="https://b649-160-154-230-120.ngrok-free.app" 
+    TRACCAR_SERVER ="https://2730b04e628b.ngrok-free.app" 
     API_USER = "admin"
     API_PASSWORD = "admin"  
     
@@ -280,7 +289,7 @@ def conducteur_edit(request, id):
 
 
 def conducteur_delete(request, id):
-    TRACCAR_SERVER ="https://b649-160-154-230-120.ngrok-free.app"
+    TRACCAR_SERVER ="https://2730b04e628b.ngrok-free.app"
     API_USER = "admin"
     API_PASSWORD = "admin"
     conducteur = get_object_or_404(Conducteur, id=id)
@@ -1151,10 +1160,35 @@ def rechercher_voyages(request):
 
     })
 
+def client_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.session.get('client_id'):
+            return redirect('login_client')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 
-
+@client_required
 def  reserver_voyage(request, id):
+
+    
+    client_twilio = TwilioClient(account_sid, auth_token)
+
+
+    client_id = request.session.get('client_id')
+    if client_id:
+        client = Client.objects.get(id=client_id)
+        client_data = {
+        'nom': client.nom,
+        'prenoms': client.prenoms,
+        'mugepci': client.mugepci
+        
+    }
+    else:
+        return redirect('login_client')
+
+
     seg_voyage_id = id
     print("seg_voyage_id", seg_voyage_id)
     print("id", id)
@@ -1173,14 +1207,33 @@ def  reserver_voyage(request, id):
     villes_concernees_reservation = ville_voyage[index_depart:index_arrivee]
     print("Villes concernées :", villes_concernees_reservation)
     segments_voyage=SegmentVoyage.objects.filter(voyage=voyage_complete)
+    # informations sur le voyage  gare depart et gare arrivee
+    gare_depart = next(
 
+                    (arret for arret in voyage_complete.arrets.all() if arret.ville == voyage.segment.segment.villedepart),
+
+                        voyage.voyage.programme.ligne.depart.nom
+
+                    )
+    gare_arrivee = next(
+
+                    (arret for arret in voyage_complete.arrets.all() if arret.ville == voyage.segment.segment.villearrivee),
+
+                        voyage.voyage.programme.ligne.arrive.nom
+
+                    )
     
-
+    montant_total = voyage.tarif * nombre_places
+    print("montant_total", montant_total)
+    
     print("voyage_complete", voyage_complete)
     
     PassagerFormSet = modelformset_factory(Passager, form=PassagerForm, extra=nombre_places)
+    remise_mugepci = Remise.objects.filter(libele='MUGEPCI').first()
+    remise_montant = remise_mugepci.montant if remise_mugepci else 0
 
     if request.method == 'POST':
+        panier_code = "Panier-" + uuid.uuid4().hex[:5].upper()
         formset = PassagerFormSet(request.POST)
         destination_form = DestinationForm(request.POST)
         print("destination_form", destination_form)
@@ -1188,46 +1241,278 @@ def  reserver_voyage(request, id):
 
         if formset.is_valid() and destination_form.is_valid():
             destination = destination_form.cleaned_data['destination']
+            montant_total_payer=0
             for form in formset:
                 if form.cleaned_data:
                     passager = form.save(commit=False)
                     passager.destination = destination
                     passager.save()
                     print("passager Passager", passager)
+                    if passager.mugepci:
+                        montant_a_payer = voyage.tarif - remise_montant
+                    else:
+                        montant_a_payer = voyage.tarif
                     reservation=Reservation.objects.create(
-                        # client=request.user,
+                        client=client,
                         segmentvoyage=voyage,
                         passager=passager,
-                        montant_reservation=voyage.tarif
+                        montant_reservation=voyage.tarif,
+                        montant_a_payer=montant_a_payer,
+                        panier_code=panier_code,
+                        
                     )
+                    montant_total_payer += montant_a_payer
                     reservation.save()
                     print("passager_reservation", passager)
                     print("reservation", reservation)
 
-                    if reservation:
+                    
                         
-                        for segment_voyage in segments_voyage:
+                    for segment_voyage in segments_voyage:
                             if segment_voyage.segment.segment.villedepart in villes_concernees_reservation or segment_voyage.segment.segment.villearrivee in villes_concernees_reservation:
                                 segment_voyage.plase_disponible -= 1
                                 segment_voyage.save()
-                            
-
-
+            if reservation:
+                        message = client_twilio.messages.create(
+                        body=(
+                                f"Bonjour {client.nom}, votre voyage a bien été réservé. "
+                                f"Le code de réservation est : {panier_code}. "
+                                "Merci de vous connecter sur notre site pour valider votre réservation par un paiement. "
+                                f"Nombre de places : {nombre_places}. "
+                                f"Montant normal : {montant_total} FCFA. "
+                                f"Montant à payer : {montant_total_payer} FCFA. "
+                                "En cas de non paiement, votre réservation sera annulée."
+                            ),                        
+                        from_='+13305579932',
+                        to='+225' + client.telephone
+                        )
 
 
                     
-            return redirect('payement')
+            return redirect('detail_panier',panier_code=panier_code)
     else:
-        formset = PassagerFormSet(queryset=Passager.objects.none())
+        formset = PassagerFormSet(queryset=Passager.objects.none(), initial=[client_data])
         destination_form = DestinationForm()
 
     return render(request, 'TravelTicket/voyage/reservation.html', {
         'formset': formset,
         'destination_form': destination_form,
-        'seg_voyage_id': seg_voyage_id
+        'seg_voyage_id': seg_voyage_id,
+        'voyage':voyage,
+        'gare_depart':gare_depart,
+        'gare_arrivee':gare_arrivee,
+        'nombre_places':nombre_places,
+        'montant_total':montant_total
+
 
     })
 
+def detail_panier(request, panier_code):
+    reservations = Reservation.objects.filter(panier_code=panier_code)
+    return render(request, 'TravelTicket/voyage/detail_panier.html', {'reservations': reservations, 'panier_code': panier_code})
 
-def payement(request):
-    return render(request, 'TravelTicket/voyage/payement.html')
+
+def payement(request, panier_code):
+
+    client_id = request.session.get('client_id')
+    client = get_object_or_404(Client, id=client_id)
+    reservations = Reservation.objects.filter(panier_code=panier_code, client=client)
+
+    total = sum(res.montant_a_payer for res in reservations)
+    montant_test = 100  # FCFA
+    transaction_id = str(uuid.uuid4())  
+
+
+    context = {
+        'apikey': settings.CINETPAY_API_KEY,
+        'site_id': settings.CINETPAY_SITE_ID,
+        'transaction_id': transaction_id,
+        'client': client,
+        # 'notify_url': 'https://81ae165b49c2.ngrok-free.app/notify/',  # facultatif
+        'return_url': settings.CINETPAY_RETURN_URL,
+    }
+    return render(request, 'TravelTicket/voyage/paye.html',context)
+
+
+def payement_success(request):
+    return render(request, 'TravelTicket/voyage/confirmation.html')
+
+
+
+def compte_client(request):
+    next_url = request.POST.get('next') or request.GET.get('next') or request.META.get('HTTP_REFERER', '')
+
+
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            client = form.save(commit=False)
+            client.save()
+            request.session['client_id'] = client.id
+            if next_url:
+                return redirect(next_url)
+            return redirect('home')
+            # return redirect(next_url if next_url else 'home') 
+    else:
+        form = ClientForm()
+    return render(request, 'TravelTicket/voyage/auth/compte_client.html', {'form': form, 'next_url': next_url})
+
+
+def login_client(request):
+    next_url = request.POST.get('next') or request.GET.get('next') or request.META.get('HTTP_REFERER', '')
+    print("next_url", next_url)
+
+    form = ClientLoginForm(request.POST or None)
+    error = None
+
+    if form.is_valid():
+        nom = form.cleaned_data['nom']
+        telephone = form.cleaned_data['telephone']
+        try:
+            client = Client.objects.get(nom=nom, telephone=telephone)
+            request.session['client_id'] = client.id
+            if next_url:
+                return redirect(next_url)
+            return redirect('home')
+
+        except Client.DoesNotExist:
+            error = "Nom ou téléphone incorrect"
+    return render(request, 'TravelTicket/voyage/auth/connexion.html', {'form': form, 'error': error, 'next_url': next_url})
+
+def logout_client(request):
+    request.session.flush()
+    return redirect('home')
+
+
+# Verification
+
+
+
+def suivre_recherchess(request):
+    TRACCAR_SERVER ="https://2730b04e628b.ngrok-free.app" 
+    API_USER = "admin"
+    API_PASSWORD = "admin" 
+
+    search_response_position = requests.get(
+        f"{TRACCAR_SERVER}/api/devices?uniqueId=Nanou20",
+        headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
+        )
+    print(search_response_position.json())
+    # 1. Récupérer le positionId depuis la réponse de l'appareil
+    position_id = search_response_position.json()[0].get("positionId")
+    print( "position_id",position_id)
+
+    # 2. Requête pour obtenir les détails de la position
+
+    position_response = requests.get(
+        f"{TRACCAR_SERVER}/api/positions?id={position_id}",
+        headers={
+            "Authorization": "Basic " + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()
+        }
+    )
+    print('position Mon phone', position_response.json())
+
+    longitude =float( position_response.json()[0].get("longitude"))
+    latitude = float(position_response.json()[0].get("latitude"))
+    vitesse= position_response.json()[0].get("speed")
+    servicetime= position_response.json()[0].get("serverTime")
+
+    geolocator = Nominatim(user_agent="geoapi")  # ici tu mets juste un nom d’identifiant, libre
+    location = geolocator.reverse((latitude, longitude))  # oui, ici c’est latitude puis longitude
+
+    print("vitesse", vitesse)
+    print("serviceTime", servicetime)
+
+    print("longitude", longitude)
+    print("latitude", latitude)
+    print('adresse', location.address)
+
+    
+    return render(request, 'TravelTicket/voyage/suivre_recherche.html')
+
+# Position voyage 
+
+def position_voyage(request):
+    TRACCAR_SERVER ="https://2730b04e628b.ngrok-free.app" 
+    API_USER = "admin"
+    API_PASSWORD = "admin" 
+
+    search_response_position = requests.get(
+        f"{TRACCAR_SERVER}/api/devices?uniqueId=Nanou20",
+        headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
+        )
+    print(search_response_position.json())
+
+    return render(request, 'TravelTicket/voyage/position_voyage.html')
+
+
+
+def suivre_recherche(request):
+    numero = request.GET.get("numero_voyage")  # ou POST selon ton choix
+    TRACCAR_SERVER ="https://2730b04e628b.ngrok-free.app" 
+    API_USER = "admin"
+    API_PASSWORD = "admin" 
+    if numero:
+        voyage = Voyage.objects.get(numerovoyage=numero)
+        depart=voyage.programme.ligne.depart
+        arrets=voyage.arrets.all()
+        arrive=voyage.programme.ligne.arrive
+        coordonnees = []
+        coordonnees.append((depart.latitude, depart.longitude))
+        if arrets:
+            
+            for arret in arrets:
+                coordonnees.append((arret.latitude, arret.longitude))
+            coordonnees.append((arrive.latitude, arrive.longitude))
+
+            print("coordonnees", coordonnees)
+
+
+            print("voyage",voyage)
+            conducteur=voyage.conducteur
+            telephone=conducteur.contact
+            
+            print("conducteur", conducteur)
+            print("telephone", telephone)
+
+
+            search_response_position = requests.get(
+                f"{TRACCAR_SERVER}/api/devices?phone={telephone}",
+                headers={'Authorization': 'Basic ' + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()}
+                )
+            print(search_response_position.json())
+            # 1. Récupérer le positionId depuis la réponse de l'appareil
+            position_id = search_response_position.json()[0].get("positionId")
+            print( "position_id",position_id)
+
+            # 2. Requête pour obtenir les détails de la position
+
+            position_response = requests.get(
+                f"{TRACCAR_SERVER}/api/positions?id={position_id}",
+                headers={
+                    "Authorization": "Basic " + base64.b64encode(f"{API_USER}:{API_PASSWORD}".encode()).decode()
+                }
+            )
+            print('position Mon phone', position_response.json())
+
+            longitude =float( position_response.json()[0].get("longitude"))
+            latitude = float(position_response.json()[0].get("latitude"))
+            vitesse= position_response.json()[0].get("speed")
+            servicetime= position_response.json()[0].get("serverTime")
+
+            geolocator = Nominatim(user_agent="geoapi")  # ici tu mets juste un nom d’identifiant, libre
+            location = geolocator.reverse((latitude, longitude))  # oui, ici c’est latitude puis longitude
+            vehicle_position = [latitude, longitude]
+
+            print("vitesse", vitesse)
+            print("serviceTime", servicetime)
+
+            print("longitude", longitude)
+            print("latitude", latitude)
+            print('adresse', location.address)
+
+            return render(request, 'TravelTicket/voyage/carte_voyage.html', {'voyage':voyage, 'points_json': json.dumps(coordonnees), 'vehicle_position': json.dumps(vehicle_position),'adresse':location.address})
+
+    else:
+        voyages = []
+    return render(request, 'TravelTicket/voyage/suivre_recherche.html')

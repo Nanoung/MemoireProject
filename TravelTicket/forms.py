@@ -648,15 +648,33 @@ class DestinationForm(forms.Form):
 
 
 
-# class ClientForm(forms.ModelForm):
-#     class Meta:
-#         model = Client
-#         fields = ['nom', 'prenoms', 'email', 'telephone']
-#         widgets = {
-#             'nom': forms.TextInput(attrs={'class': 'form-control'}),
-#             'prenoms': forms.TextInput(attrs={'class': 'form-control'}),
-#             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-#             'telephone': forms.TextInput(attrs={'class': 'form-control'}),
-#         }
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['nom', 'prenoms', 'telephone', 'mugepci']
+        widgets = {
+            'nom': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nom'
+            }),
+            'prenoms': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Prénoms'
+            }),
+            'telephone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Téléphone'
+            }),
+            'mugepci': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Numéro MUGEPCI (optionnel)'
+            }),
+        }
+
+
+class ClientLoginForm(forms.Form):
+    nom = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom'}))
+    telephone = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Téléphone'}))
+
 
     

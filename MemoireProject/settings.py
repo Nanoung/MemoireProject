@@ -66,6 +66,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'TravelTicket.context_processors.client_context',  # ← ajoute ceci
+
             ],
         },
     },
@@ -111,11 +113,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr'
+USE_L10N = True
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 
-USE_I18N = True
+# USE_I18N = True
 
 USE_TZ = True
 
@@ -132,3 +136,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+CINETPAY_SITE_ID = '105899964'
+CINETPAY_API_KEY = '1244723948686007938f7084.29204299'
+# CINETPAY_NOTIFY_URL = 'https://votresite.com/notify/'  # webhook (facultatif au début)
+
+CINETPAY_RETURN_URL = 'https://81ae165b49c2.ngrok-free.app/Chonco_Transport/TravelTicket/reservation/confirmation/'
